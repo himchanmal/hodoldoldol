@@ -1,8 +1,11 @@
 import React, {useState, useEffect, memo} from 'react';
 import {Box, Select, MenuItem, FormControl} from '@mui/material';
-import {categories, majorCategories} from '../data/categories.js';
+import {useCategoryContext} from '../contexts/CategoryContext.js';
 
 const CategoryDropdown = memo(function CategoryDropdown({onCategoryChange, selectedMajor, selectedMinor}) {
+  const {getCategoriesForDropdown, majorCategories} = useCategoryContext();
+  const categories = getCategoriesForDropdown();
+  
   const [majorCategory, setMajorCategory] = useState(selectedMajor || '');
   const [minorCategory, setMinorCategory] = useState(selectedMinor || '');
 
@@ -24,7 +27,7 @@ const CategoryDropdown = memo(function CategoryDropdown({onCategoryChange, selec
     onCategoryChange({major: majorCategory, minor});
   };
 
-  const minorCategories = majorCategory ? categories[majorCategory] || [] : [];
+  const minorCategories = majorCategory ? (categories[majorCategory] || []) : [];
 
   return (
     <Box sx={{display: 'flex', gap: 1.5}}>

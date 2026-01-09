@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {ThemeProvider, Box, AppBar, Toolbar, Typography, Container, CssBaseline} from '@mui/material';
 import theme from './theme.js';
+import {CategoryProvider} from './contexts/CategoryContext.js';
 import Tabs from './components/Tabs.js';
 import CategoryPage from './pages/CategoryPage.js';
 import SummaryPage from './pages/SummaryPage.js';
@@ -76,7 +77,8 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'background.default'}}>
+      <CategoryProvider>
+        <Box sx={{display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'background.default'}}>
         <AppBar position="sticky" sx={{bgcolor: 'primary.main', borderRadius: 0}}>
           <Toolbar>
             <Typography variant="h6" component="div" sx={{flexGrow: 1, textAlign: 'center', fontWeight: 500}}>
@@ -91,6 +93,7 @@ function App() {
           </Container>
         </Box>
       </Box>
+      </CategoryProvider>
     </ThemeProvider>
   );
 }
