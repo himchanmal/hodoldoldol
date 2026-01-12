@@ -1,5 +1,5 @@
 import {useState, useEffect} from 'react';
-import {supabase} from '../lib/supabase.js';
+import {categoryAPI} from '../lib/api.js';
 
 export function useCategories() {
   const [categories, setCategories] = useState({});
@@ -7,16 +7,17 @@ export function useCategories() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Supabase에서 카테고리 데이터 불러오기
+  // 백엔드 API에서 카테고리 데이터 불러오기
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const {data, error} = await supabase
-        .from('categories')
-        .select('*')
-        .order('main_category', {ascending: true});
+      const response = await categoryAPI.getAll();
 
-      if (error) throw error;
+      if (!response.success) {
+        throw new Error(response.error || '카테고리 불러오기 실패');
+      }
+
+      const data = response.data;
 
       // 데이터를 {대분류: [{id, sub_category}]} 형태로 변환
       const categoriesMap = {};
@@ -47,20 +48,15 @@ export function useCategories() {
   // 카테고리 추가
   const addCategory = async (mainCategory, subCategory) => {
     try {
-      const {data, error} = await supabase
-        .from('categories')
-        .insert({
-          main_category: mainCategory,
-          sub_category: subCategory
-        })
-        .select()
-        .single();
+      const response = await categoryAPI.create(mainCategory, subCategory);
 
-      if (error) throw error;
+      if (!response.success) {
+        throw new Error(response.error || '카테고리 추가 실패');
+      }
 
       // 로컬 상태 업데이트
       await fetchCategories();
-      return {success: true, data};
+      return {success: true, data: response.data};
     } catch (err) {
       console.error('카테고리 추가 오류:', err);
       return {success: false, error: err.message};
@@ -70,12 +66,11 @@ export function useCategories() {
   // 카테고리 삭제
   const deleteCategory = async (id) => {
     try {
-      const {error} = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', id);
+      const response = await categoryAPI.delete(id);
 
-      if (error) throw error;
+      if (!response.success) {
+        throw new Error(response.error || '카테고리 삭제 실패');
+      }
 
       // 로컬 상태 업데이트
       await fetchCategories();
@@ -89,21 +84,15 @@ export function useCategories() {
   // 카테고리 수정
   const updateCategory = async (id, mainCategory, subCategory) => {
     try {
-      const {data, error} = await supabase
-        .from('categories')
-        .update({
-          main_category: mainCategory,
-          sub_category: subCategory
-        })
-        .eq('id', id)
-        .select()
-        .single();
+      const response = await categoryAPI.update(id, mainCategory, subCategory);
 
-      if (error) throw error;
+      if (!response.success) {
+        throw new Error(response.error || '카테고리 수정 실패');
+      }
 
       // 로컬 상태 업데이트
       await fetchCategories();
-      return {success: true, data};
+      return {success: true, data: response.data};
     } catch (err) {
       console.error('카테고리 수정 오류:', err);
       return {success: false, error: err.message};
