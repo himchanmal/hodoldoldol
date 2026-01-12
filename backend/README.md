@@ -65,4 +65,60 @@ npm run dev
 
 ## 배포
 
-Railway, Render, Fly.io 등의 플랫폼에 배포 가능합니다.
+### Railway 배포 
+
+#### 1. Railway 계정 생성 및 프로젝트 생성
+
+1. [Railway](https://railway.app)에 접속하여 계정을 생성합니다 (GitHub 계정으로 로그인 가능)
+2. "New Project" 클릭
+3. "Deploy from GitHub repo" 선택 (또는 "Empty Project"로 시작 후 GitHub 연동)
+
+#### 2. 프로젝트 설정
+
+1. GitHub 저장소를 선택하거나 연결합니다
+2. **Root Directory를 `backend`로 설정**합니다:
+   - Settings → Source → Root Directory → `backend` 입력
+3. **Build Command** (자동 감지되지만 확인):
+   - `npm install`
+4. **Start Command**:
+   - `npm start`
+
+#### 3. 환경 변수 설정
+
+Railway 대시보드 → Variables 탭에서 다음 환경 변수를 추가합니다:
+
+```env
+SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+PORT=3001
+NODE_ENV=production
+FRONTEND_URL=https://your-frontend.vercel.app
+```
+
+**중요**: 
+- `SUPABASE_SERVICE_ROLE_KEY`는 Supabase 대시보드 → Settings → API → **secret** 키를 사용합니다
+- `FRONTEND_URL`은 Vercel에 배포된 프론트엔드 URL을 입력합니다 (CORS 설정용)
+
+#### 4. 배포 확인
+
+1. Railway가 자동으로 배포를 시작합니다
+2. 배포가 완료되면 "Settings" → "Domains"에서 생성된 URL을 확인할 수 있습니다
+3. 예: `https://your-backend.railway.app`
+4. Health check: `https://your-backend.railway.app/api/health` 접속하여 `{"status":"ok","message":"Server is running"}` 응답 확인
+
+#### 5. 프론트엔드 환경 변수 업데이트
+
+Vercel 대시보드에서 `REACT_APP_API_URL`을 Railway 백엔드 URL로 업데이트합니다:
+
+```env
+REACT_APP_API_URL=https://your-backend.railway.app/api
+```
+
+#### 6. CORS 설정 확인
+
+백엔드의 `FRONTEND_URL` 환경 변수가 프론트엔드 URL과 일치하는지 확인합니다.
+
+### 다른 플랫폼 배포
+
+- **Render**: `backend/` 폴더를 루트로 설정, 환경 변수 동일하게 설정
+- **Fly.io**: `fly.toml` 설정 파일 필요, `backend/` 폴더를 루트로 설정
