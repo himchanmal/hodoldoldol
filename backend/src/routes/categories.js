@@ -13,9 +13,19 @@ router.get('/', async (req, res) => {
 
     if (error) throw error;
 
+    // 대분류별 count 계산
+    const mainCategoryCounts = {};
+    data.forEach(category => {
+      if (!mainCategoryCounts[category.main_category]) {
+        mainCategoryCounts[category.main_category] = 0;
+      }
+      mainCategoryCounts[category.main_category] += category.count || 0;
+    });
+
     res.json({
       success: true,
-      data
+      data,
+      mainCategoryCounts // 대분류별 총 count
     });
   } catch (error) {
     console.error('카테고리 조회 오류:', error);
@@ -29,7 +39,7 @@ router.get('/', async (req, res) => {
 // 카테고리 추가
 router.post('/', async (req, res) => {
   try {
-    const {main_category, sub_category} = req.body;
+    const {main_category, sub_category, count} = req.body;
 
     if (!main_category || !sub_category) {
       return res.status(400).json({
@@ -42,7 +52,8 @@ router.post('/', async (req, res) => {
       .from('categories')
       .insert({
         main_category,
-        sub_category
+        sub_category,
+        count: count || 0
       })
       .select()
       .single();
@@ -66,7 +77,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const {id} = req.params;
-    const {main_category, sub_category} = req.body;
+    const {main_category, sub_category, count} = req.body;
 
     if (!main_category || !sub_category) {
       return res.status(400).json({
@@ -75,12 +86,19 @@ router.put('/:id', async (req, res) => {
       });
     }
 
+    const updateData = {
+      main_category,
+      sub_category
+    };
+
+    // count가 제공된 경우에만 업데이트
+    if (count !== undefined) {
+      updateData.count = count;
+    }
+
     const {data, error} = await supabase
       .from('categories')
-      .update({
-        main_category,
-        sub_category
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();

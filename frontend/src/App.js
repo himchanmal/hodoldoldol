@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useCallback} from 'react';
 import {ThemeProvider, Box, AppBar, Toolbar, Typography, Container, CssBaseline} from '@mui/material';
 import theme from './theme.js';
 import {CategoryProvider} from './contexts/CategoryContext.js';
@@ -28,7 +28,7 @@ function App() {
     {id: '12', label: '12월'}
   ];
 
-  const getMonthExpenses = (month) => {
+  const getMonthExpenses = useCallback((month) => {
     if (!monthlyExpenses[month]) {
       return {
         both: [],
@@ -37,17 +37,17 @@ function App() {
       };
     }
     return monthlyExpenses[month];
-  };
+  }, [monthlyExpenses]);
 
-  const updateMonthExpenses = (month, type, expenses) => {
+  const updateMonthExpenses = useCallback((month, type, expenses) => {
     setMonthlyExpenses((prev) => ({
       ...prev,
       [month]: {
-        ...getMonthExpenses(month),
+        ...(prev[month] || {both: [], hodol: [], doldol: []}),
         [type]: expenses
       }
     }));
-  };
+  }, []);
 
   const renderTabContent = () => {
     if (activeTab === 'category') {

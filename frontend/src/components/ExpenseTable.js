@@ -5,7 +5,15 @@ import CategoryDropdown from './CategoryDropdown.js';
 const ExpenseTable = memo(function ExpenseTable({title, expenses = [], onExpensesChange}) {
   const [localExpenses, setLocalExpenses] = useState(() => {
     if (expenses.length > 0) {
-      return expenses;
+      // 기존 데이터 + 빈 행 5개 추가
+      const emptyRows = Array(5).fill(null).map(() => ({
+        date: '',
+        amount: '',
+        majorCategory: '',
+        minorCategory: '',
+        note: ''
+      }));
+      return [...expenses, ...emptyRows];
     }
     return Array(10).fill(null).map(() => ({
       date: '',
@@ -18,7 +26,24 @@ const ExpenseTable = memo(function ExpenseTable({title, expenses = [], onExpense
 
   useEffect(() => {
     if (expenses.length > 0) {
-      setLocalExpenses(expenses);
+      // 기존 데이터 + 빈 행 5개 추가
+      const emptyRows = Array(5).fill(null).map(() => ({
+        date: '',
+        amount: '',
+        majorCategory: '',
+        minorCategory: '',
+        note: ''
+      }));
+      setLocalExpenses([...expenses, ...emptyRows]);
+    } else {
+      // 데이터가 없으면 빈 행 10개
+      setLocalExpenses(Array(10).fill(null).map(() => ({
+        date: '',
+        amount: '',
+        majorCategory: '',
+        minorCategory: '',
+        note: ''
+      })));
     }
   }, [expenses]);
 
@@ -66,7 +91,7 @@ const ExpenseTable = memo(function ExpenseTable({title, expenses = [], onExpense
             </TableHead>
             <TableBody>
               {localExpenses.map((expense, index) => (
-                <TableRow key={index} sx={{'&:hover': {bgcolor: 'grey.50'}}}>
+                <TableRow key={expense.id || `expense-${index}`} sx={{'&:hover': {bgcolor: 'grey.50'}}}>
                 <TableCell sx={{textAlign: 'center', py: 1}}>
                   <TextField
                     type="date"
@@ -80,7 +105,7 @@ const ExpenseTable = memo(function ExpenseTable({title, expenses = [], onExpense
                 <TableCell sx={{textAlign: 'center', py: 1}}>
                   <TextField
                     type="number"
-                    value={expense.amount}
+                    value={expense.amount || ''}
                     onChange={(e) => handleExpenseChange(index, 'amount', e.target.value)}
                     placeholder="금액"
                     size="small"
@@ -99,7 +124,7 @@ const ExpenseTable = memo(function ExpenseTable({title, expenses = [], onExpense
                     type="text"
                     value={expense.note}
                     onChange={(e) => handleExpenseChange(index, 'note', e.target.value)}
-                    placeholder="비고"
+                    placeholder="메모"
                     size="small"
                     fullWidth
                   />
