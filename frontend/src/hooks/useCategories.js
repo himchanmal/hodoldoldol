@@ -19,23 +19,45 @@ export function useCategories() {
 
       const data = response.data;
 
-      // 데이터를 {대분류: [{id, sub_category}]} 형태로 변환
+      // 데이터를 {대분류: [{id, sub_category, count}]} 형태로 변환
       const categoriesMap = {};
       const majors = [];
 
       data.forEach((item) => {
         if (!categoriesMap[item.main_category]) {
           categoriesMap[item.main_category] = [];
-          majors.push(item.main_category);
+          majors.push({
+            name: item.main_category,
+            count: response.mainCategoryCounts?.[item.main_category] || 0
+          });
         }
         categoriesMap[item.main_category].push({
           id: item.id,
-          sub_category: item.sub_category
+          sub_category: item.sub_category,
+          count: item.count || 0
+        });
+      });
+
+      // 대분류를 count 기준으로 정렬(같으면 가나다 순)
+      majors.sort((a, b) => {
+        if (b.count !== a.count) {
+          return b.count - a.count;
+        }
+        return a.name.localeCompare(b.name, 'ko');
+      });
+
+      // 소분류도 각 대분류 내에서 count 기준으로 정렬(같으면 가나다 순)
+      Object.keys(categoriesMap).forEach((major) => {
+        categoriesMap[major].sort((a, b) => {
+          if (b.count !== a.count) {
+            return b.count - a.count;
+          }
+          return a.sub_category.localeCompare(b.sub_category, 'ko');
         });
       });
 
       setCategories(categoriesMap);
-      setMajorCategories(majors);
+      setMajorCategories(majors.map(m => m.name));
       setError(null);
     } catch (err) {
       console.error('카테고리 불러오기 오류:', err);
@@ -99,7 +121,6 @@ export function useCategories() {
     }
   };
 
-  // 전체 카테고리 데이터를 원래 형태로 변환 (CategoryDropdown 등에서 사용)
   const getCategoriesForDropdown = () => {
     const result = {};
     majorCategories.forEach((major) => {

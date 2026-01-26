@@ -1,4 +1,3 @@
-// 환경 변수를 가장 먼저 로드 (다른 import 전에)
 import './lib/env.js';
 
 import express from 'express';

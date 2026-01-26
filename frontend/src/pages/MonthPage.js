@@ -1,11 +1,13 @@
 import React, {useEffect, useState} from 'react';
-import {Box, Typography, CircularProgress, Alert} from '@mui/material';
+import {Box, CircularProgress, Alert} from '@mui/material';
 import ExpenseTable from '../components/ExpenseTable.js';
+import Tabs from '../components/Tabs.js';
 import {expenseAPI} from '../lib/api.js';
 
 function MonthPage({month, expensesBoth, expensesHodol, expensesDoldol, onExpensesBothChange, onExpensesHodolChange, onExpensesDoldolChange}) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState(0);
 
   // API 데이터를 ExpenseTable 형식으로 변환
   const transformExpenseData = (apiData) => {
@@ -20,7 +22,7 @@ function MonthPage({month, expensesBoth, expensesHodol, expensesDoldol, onExpens
     }));
   };
 
-  // 데이터 로드 (month가 변경될 때만)
+  // 데이터 로드(month가 변경될 때만)
   useEffect(() => {
     const loadExpenses = async () => {
       setLoading(true);
@@ -76,29 +78,51 @@ function MonthPage({month, expensesBoth, expensesHodol, expensesDoldol, onExpens
     );
   }
 
+  const tabs = [
+    {id: 'both', label: '호돌이와 돌돌이'},
+    {id: 'hodol', label: '호돌이'},
+    {id: 'doldol', label: '돌돌이'}
+  ];
+
+  const activeTabId = tabs[activeTab]?.id || 'both';
+
+  const handleTabChange = (tabId) => {
+    const index = tabs.findIndex(tab => tab.id === tabId);
+    setActiveTab(index >= 0 ? index : 0);
+  };
+
   return (
-    <Box>
-      <Typography variant="h5" sx={{mb: 3, fontWeight: 600, color: 'text.primary'}}>
-        {month}월 지출 내역
-      </Typography>
-      <Box sx={{display: 'flex', flexDirection: 'column', gap: 3}}>
-        <ExpenseTable
-          title="호돌이와 돌돌이"
-          expenses={expensesBoth}
-          onExpensesChange={onExpensesBothChange}
-        />
-        <ExpenseTable
-          title="호돌이"
-          expenses={expensesHodol}
-          onExpensesChange={onExpensesHodolChange}
-        />
-        <ExpenseTable
-          title="돌돌이"
-          expenses={expensesDoldol}
-          onExpensesChange={onExpensesDoldolChange}
-        />
+    <>
+      <Box sx={{mx: {xs: -2, sm: -3}, mt: -2}}>
+        <Tabs tabs={tabs} activeTab={activeTabId} onTabChange={handleTabChange} />
       </Box>
-    </Box>
+      <Box sx={{mt: 2}}>
+        {activeTab === 0 && (
+          <ExpenseTable
+            expenses={expensesBoth}
+            onExpensesChange={onExpensesBothChange}
+            month={month}
+            type="both"
+          />
+        )}
+        {activeTab === 1 && (
+          <ExpenseTable
+            expenses={expensesHodol}
+            onExpensesChange={onExpensesHodolChange}
+            month={month}
+            type="hodol"
+          />
+        )}
+        {activeTab === 2 && (
+          <ExpenseTable
+            expenses={expensesDoldol}
+            onExpensesChange={onExpensesDoldolChange}
+            month={month}
+            type="doldol"
+          />
+        )}
+      </Box>
+    </>
   );
 }
 

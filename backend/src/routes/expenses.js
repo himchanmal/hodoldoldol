@@ -3,7 +3,7 @@ import {supabase} from '../lib/supabase.js';
 
 const router = express.Router();
 
-// 지출 내역 조회 (월별, 타입별)
+// 지출 내역 조회(월별, 타입별)
 router.get('/', async (req, res) => {
   try {
     const {month, type} = req.query;
@@ -152,7 +152,7 @@ router.post('/batch', async (req, res) => {
       });
     }
 
-    // 빈 값 필터링 (실제 데이터가 있는 것만 저장)
+    // 빈 값 필터링
     const validExpenses = expenses
       .filter(exp => exp.date || exp.amount || exp.major_category || exp.note)
       .map(exp => ({

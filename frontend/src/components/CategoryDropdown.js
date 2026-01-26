@@ -30,11 +30,11 @@ const CategoryDropdown = memo(function CategoryDropdown({onCategoryChange, selec
   const minorCategories = majorCategory ? (categories[majorCategory] || []) : [];
 
   return (
-    <Box sx={{display: 'flex', gap: 1.5}}>
+    <Box sx={{display: 'flex', gap: 1}}>
       <FormControl
         size="small"
         sx={{
-          minWidth: 130,
+          flex: 1,
           '& .MuiOutlinedInput-root': {
             bgcolor: 'background.paper',
             '&:hover fieldset': {

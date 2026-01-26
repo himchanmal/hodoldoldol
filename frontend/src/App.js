@@ -8,12 +8,18 @@ import SummaryPage from './pages/SummaryPage.js';
 import MonthPage from './pages/MonthPage.js';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('category');
+  // 현재 월을 가져와서 해당 월 탭을 기본으로 선택
+  const getCurrentMonth = () => {
+    const currentMonth = new Date().getMonth() + 1;
+    return currentMonth.toString();
+  };
+
+  const [activeTab, setActiveTab] = useState(getCurrentMonth());
   const [monthlyExpenses, setMonthlyExpenses] = useState({});
 
   const tabs = [
-    {id: 'category', label: '카테고리'},
     {id: 'summary', label: '총괄장'},
+    {id: 'category', label: '카테고리'},
     {id: '1', label: '1월'},
     {id: '2', label: '2월'},
     {id: '3', label: '3월'},
