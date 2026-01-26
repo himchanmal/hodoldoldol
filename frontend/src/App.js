@@ -88,7 +88,7 @@ function App() {
         </AppBar>
         <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
         <Box component="main" sx={{flexGrow: 1, overflowY: 'auto'}}>
-          <Container maxWidth="xl" sx={{py: 4}}>
+          <Container maxWidth="xl" sx={{py: 2}}>
             {renderTabContent()}
           </Container>
         </Box>

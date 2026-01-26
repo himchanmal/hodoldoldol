@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useMemo} from 'react';
 import {
   Box,
   Typography,
@@ -68,6 +68,29 @@ function CategoryPage() {
     }
   };
 
+  // 카테고리 데이터 가나다 순으로 정렬
+  const sortedMajorCategories = useMemo(() => {
+    return [...majorCategories].sort((a, b) => a.localeCompare(b, 'ko'));
+  }, [majorCategories]);
+
+  const sortedCategories = useMemo(() => {
+    const sorted = {};
+    sortedMajorCategories.forEach(major => {
+      if (categories[major]) {
+        sorted[major] = [...categories[major]].sort((a, b) => 
+          a.sub_category.localeCompare(b.sub_category, 'ko')
+        );
+      }
+    });
+    return sorted;
+  }, [categories, sortedMajorCategories]);
+
+  // 최대 소분류 개수 계산
+  const maxSubCategoryCount = useMemo(() => {
+    if (!sortedMajorCategories.length) return 0;
+    return Math.max(...sortedMajorCategories.map(major => sortedCategories[major]?.length || 0));
+  }, [sortedMajorCategories, sortedCategories]);
+
   if (loading) {
     return (
       <Box sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px'}}>
@@ -100,44 +123,57 @@ function CategoryPage() {
           <Table>
             <TableHead>
               <TableRow sx={{bgcolor: 'grey.100'}}>
-                <TableCell sx={{fontWeight: 600, textAlign: 'center'}}>대분류</TableCell>
-                <TableCell colSpan={6} sx={{fontWeight: 600, textAlign: 'center'}}>소분류</TableCell>
-                <TableCell sx={{fontWeight: 600, textAlign: 'center', minWidth: 100}}>관리</TableCell>
+                <TableCell sx={{fontWeight: 600, textAlign: 'center', px: 1, py: 0.75}}>대분류</TableCell>
+                <TableCell colSpan={maxSubCategoryCount || 1} sx={{fontWeight: 600, textAlign: 'center', px: 1, py: 0.75}}>소분류</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {majorCategories.map((major) => (
-                <TableRow key={major} sx={{'&:hover': {bgcolor: 'grey.50'}}}>
-                  <TableCell sx={{fontWeight: 500, textAlign: 'center', minWidth: 140, bgcolor: 'grey.50'}}>
-                    {major}
-                  </TableCell>
-                  {categories[major]?.map((item, index) => (
-                    <TableCell key={item.id} sx={{textAlign: 'center', minWidth: 120, position: 'relative'}}>
-                      {item.sub_category}
-                      <IconButton
-                        size="small"
-                        sx={{position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)'}}
-                        onClick={() => handleOpenEdit(item.id, major, item.sub_category)}
-                      >
-                        <Edit fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        sx={{position: 'absolute', right: 32, top: '50%', transform: 'translateY(-50%)'}}
-                        onClick={() => handleDelete(item.id)}
-                      >
-                        <Delete fontSize="small" />
-                      </IconButton>
+              {sortedMajorCategories.map((major) => {
+                const subCategories = sortedCategories[major] || [];
+                const emptyCellCount = maxSubCategoryCount - subCategories.length;
+                return (
+                  <TableRow key={major} sx={{'&:hover': {bgcolor: 'grey.50'}}}>
+                    <TableCell sx={{fontWeight: 500, textAlign: 'center', minWidth: 140, bgcolor: 'grey.50', px: 1, py: 0.75}}>
+                      {major}
                     </TableCell>
-                  ))}
-                  {Array(Math.max(0, 6 - (categories[major]?.length || 0)))
-                    .fill(null)
-                    .map((_, index) => (
-                      <TableCell key={`empty-${index}`} sx={{textAlign: 'center', minWidth: 120}}></TableCell>
+                    {subCategories.map((item) => (
+                      <TableCell
+                        key={item.id}
+                        sx={{
+                          textAlign: 'center',
+                          position: 'relative',
+                          whiteSpace: 'nowrap',
+                          py: 1,
+                          px: 0,
+                        }}
+                      >
+                        <Box component="span" sx={{pr: 6, display: 'inline-block'}}>
+                          {item.sub_category}
+                        </Box>
+                        <IconButton
+                          size="small"
+                          sx={{position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)'}}
+                          onClick={() => handleOpenEdit(item.id, major, item.sub_category)}
+                        >
+                          <Edit fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          sx={{position: 'absolute', right: 28, top: '50%', transform: 'translateY(-50%)'}}
+                          onClick={() => handleDelete(item.id)}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </TableCell>
                     ))}
-                  <TableCell sx={{textAlign: 'center'}}></TableCell>
-                </TableRow>
-              ))}
+                    {Array(emptyCellCount)
+                      .fill(null)
+                      .map((_, index) => (
+                        <TableCell key={`empty-${index}`} sx={{textAlign: 'center', px: 1, py: 0.75}}></TableCell>
+                      ))}
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </Box>
