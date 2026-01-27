@@ -23,16 +23,7 @@ const theme = createTheme({
     }
   },
   typography: {
-    fontFamily: 'Pretendard', 
-    fontSize: 14,
-    h4: {
-      fontWeight: 700,
-      letterSpacing: '-0.02em'
-    },
-    h5: {
-      fontWeight: 600,
-      letterSpacing: '-0.01em'
-    },
+    fontFamily: 'Pretendard',
     h6: {
       fontWeight: 600
     }

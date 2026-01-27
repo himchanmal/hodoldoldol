@@ -51,9 +51,28 @@ function CategoryPage() {
       return;
     }
 
+    const main = formData.mainCategory.trim();
+    const sub = formData.subCategory.trim();
+    if (!main || !sub) {
+      alert('대분류와 소분류를 입력해주세요.');
+      return;
+    }
+
+    // 대분류/소분류 조합 중복 검사
+    const subList = categories[main] || [];
+    const isDuplicate = subList.some(
+      (item) =>
+        item.sub_category === sub &&
+        (editingCategory?.id ? item.id !== editingCategory.id : true)
+    );
+    if (isDuplicate) {
+      alert('이미 존재하는 대분류/소분류 조합입니다.');
+      return;
+    }
+
     const result = editingCategory?.id
-      ? await updateCategory(editingCategory.id, formData.mainCategory, formData.subCategory)
-      : await addCategory(formData.mainCategory, formData.subCategory);
+      ? await updateCategory(editingCategory.id, main, sub)
+      : await addCategory(main, sub);
 
     if (result.success) {
       handleCloseDialog();
@@ -109,57 +128,109 @@ function CategoryPage() {
 
   return (
     <Box>
-      <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3}}>
-        <Typography variant="h5" sx={{fontWeight: 600, color: 'text.primary'}}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
+        <Typography
+          variant="h6"
+          sx={{ fontWeight: 600, color: "text.primary" }}
+        >
           카테고리 관리
         </Typography>
-        <Button variant="contained" startIcon={<Add />} onClick={handleOpenAdd}>
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<Add />}
+          onClick={handleOpenAdd}
+        >
           카테고리 추가
         </Button>
       </Box>
 
       <Paper elevation={1}>
-        <Box sx={{overflowX: 'auto'}}>
+        <Box sx={{ overflowX: "auto" }}>
           <Table>
             <TableHead>
-              <TableRow sx={{bgcolor: 'grey.100'}}>
-                <TableCell sx={{fontWeight: 600, textAlign: 'center', px: 1, py: 0.75}}>대분류</TableCell>
-                <TableCell colSpan={maxSubCategoryCount || 1} sx={{fontWeight: 600, textAlign: 'center', px: 1, py: 0.75}}>소분류</TableCell>
+              <TableRow sx={{ bgcolor: "grey.100" }}>
+                <TableCell
+                  sx={{ fontWeight: 600, textAlign: "center", px: 1, py: 0.75 }}
+                >
+                  대분류
+                </TableCell>
+                <TableCell
+                  colSpan={maxSubCategoryCount || 1}
+                  sx={{ fontWeight: 600, textAlign: "center", px: 1, py: 0.75 }}
+                >
+                  소분류
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {sortedMajorCategories.map((major) => {
                 const subCategories = sortedCategories[major] || [];
-                const emptyCellCount = maxSubCategoryCount - subCategories.length;
+                const emptyCellCount =
+                  maxSubCategoryCount - subCategories.length;
                 return (
-                  <TableRow key={major} sx={{'&:hover': {bgcolor: 'grey.50'}}}>
-                    <TableCell sx={{fontWeight: 500, textAlign: 'center', minWidth: 140, bgcolor: 'grey.50', px: 1, py: 0.75}}>
+                  <TableRow
+                    key={major}
+                    sx={{ "&:hover": { bgcolor: "grey.50" } }}
+                  >
+                    <TableCell
+                      sx={{
+                        fontWeight: 500,
+                        textAlign: "center",
+                        minWidth: 140,
+                        bgcolor: "grey.50",
+                        px: 1,
+                        py: 0.75,
+                      }}
+                    >
                       {major}
                     </TableCell>
                     {subCategories.map((item) => (
                       <TableCell
                         key={item.id}
                         sx={{
-                          textAlign: 'center',
-                          position: 'relative',
-                          whiteSpace: 'nowrap',
+                          textAlign: "center",
+                          position: "relative",
+                          whiteSpace: "nowrap",
                           py: 1,
                           px: 0,
                         }}
                       >
-                        <Box component="span" sx={{pr: 6, display: 'inline-block'}}>
+                        <Box
+                          component="span"
+                          sx={{ pr: 6, display: "inline-block" }}
+                        >
                           {item.sub_category}
                         </Box>
                         <IconButton
                           size="small"
-                          sx={{position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)'}}
-                          onClick={() => handleOpenEdit(item.id, major, item.sub_category)}
+                          sx={{
+                            position: "absolute",
+                            right: 4,
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                          }}
+                          onClick={() =>
+                            handleOpenEdit(item.id, major, item.sub_category)
+                          }
                         >
                           <Edit fontSize="small" />
                         </IconButton>
                         <IconButton
                           size="small"
-                          sx={{position: 'absolute', right: 28, top: '50%', transform: 'translateY(-50%)'}}
+                          sx={{
+                            position: "absolute",
+                            right: 28,
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                          }}
                           onClick={() => handleDelete(item.id)}
                         >
                           <Delete fontSize="small" />
@@ -169,7 +240,10 @@ function CategoryPage() {
                     {Array(emptyCellCount)
                       .fill(null)
                       .map((_, index) => (
-                        <TableCell key={`empty-${index}`} sx={{textAlign: 'center', px: 1, py: 0.75}}></TableCell>
+                        <TableCell
+                          key={`empty-${index}`}
+                          sx={{ textAlign: "center", px: 1, py: 0.75 }}
+                        ></TableCell>
                       ))}
                   </TableRow>
                 );
@@ -179,20 +253,31 @@ function CategoryPage() {
         </Box>
       </Paper>
 
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>{editingCategory ? '카테고리 수정' : '카테고리 추가'}</DialogTitle>
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {editingCategory ? "카테고리 수정" : "카테고리 추가"}
+        </DialogTitle>
         <DialogContent>
-          <Box sx={{display: 'flex', flexDirection: 'column', gap: 2, pt: 1}}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
             <TextField
               label="대분류"
               value={formData.mainCategory}
-              onChange={(e) => setFormData({...formData, mainCategory: e.target.value})}
+              onChange={(e) =>
+                setFormData({ ...formData, mainCategory: e.target.value })
+              }
               fullWidth
             />
             <TextField
               label="소분류"
               value={formData.subCategory}
-              onChange={(e) => setFormData({...formData, subCategory: e.target.value})}
+              onChange={(e) =>
+                setFormData({ ...formData, subCategory: e.target.value })
+              }
               fullWidth
             />
           </Box>
@@ -200,7 +285,7 @@ function CategoryPage() {
         <DialogActions>
           <Button onClick={handleCloseDialog}>취소</Button>
           <Button onClick={handleSubmit} variant="contained">
-            {editingCategory ? '수정' : '추가'}
+            {editingCategory ? "수정" : "추가"}
           </Button>
         </DialogActions>
       </Dialog>
