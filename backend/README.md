@@ -27,7 +27,14 @@ SUPABASE_SECRET_KEY=your_supabase_secret_key
 PORT=3001
 NODE_ENV=development
 FRONTEND_URL=http://localhost:3000
+ALLOWED_TOKENS=token1,token2
 ```
+
+**인증 설정 (선택사항)**:
+- `ALLOWED_TOKENS`: 허용된 접근 토큰 목록 (쉼표로 구분)
+- 설정하지 않으면 모든 사용자가 접근 가능
+- 설정하면 해당 토큰을 가진 사용자만 데이터 조회 가능
+- 비허용 사용자는 빈 데이터만 조회 가능 (추가/수정/삭제 불가)
 
 **중요**: `SUPABASE_SECRET_KEY`는 Supabase 대시보드 → Settings → API → **secret** 키를 사용합니다.
 - ✅ **secret 키 사용 권장** (RLS를 존중하면서 서버 사이드 작업 가능)
@@ -93,6 +100,7 @@ SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 PORT=3001
 NODE_ENV=production
 FRONTEND_URL=https://your-frontend.vercel.app
+ALLOWED_TOKENS=token1,token2
 ```
 
 **중요**: 

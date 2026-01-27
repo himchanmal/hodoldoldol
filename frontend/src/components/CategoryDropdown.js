@@ -44,7 +44,7 @@ const CategoryDropdown = memo(function CategoryDropdown({onCategoryChange, selec
         }}
       >
         <Select
-          value={majorCategory}
+          value={majorCategory ? majorCategory : ''}
           onChange={handleMajorChange}
           displayEmpty
         >
@@ -61,7 +61,7 @@ const CategoryDropdown = memo(function CategoryDropdown({onCategoryChange, selec
       <FormControl
         size="small"
         sx={{
-          minWidth: 130,
+          flex: 1,
           '& .MuiOutlinedInput-root': {
             bgcolor: 'background.paper'
           }
@@ -69,7 +69,7 @@ const CategoryDropdown = memo(function CategoryDropdown({onCategoryChange, selec
         disabled={!majorCategory}
       >
         <Select
-          value={minorCategory}
+          value={minorCategory ? minorCategory : ''}
           onChange={handleMinorChange}
           displayEmpty
         >

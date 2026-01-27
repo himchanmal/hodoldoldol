@@ -4,6 +4,7 @@ import express from 'express';
 import cors from 'cors';
 import categoryRoutes from './routes/categories.js';
 import expenseRoutes from './routes/expenses.js';
+import {authMiddleware} from './middleware/auth.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -14,6 +15,9 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+
+// 인증 미들웨어 적용
+app.use('/api', authMiddleware);
 
 // 라우트
 app.use('/api/categories', categoryRoutes);

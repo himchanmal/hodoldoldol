@@ -39,6 +39,14 @@ router.get('/', async (req, res) => {
 // 카테고리 추가
 router.post('/', async (req, res) => {
   try {
+    // 인증되지 않은 사용자는 접근 불가
+    if (!req.user?.authenticated) {
+      return res.status(401).json({
+        success: false,
+        error: '인증이 필요합니다.'
+      });
+    }
+
     const {main_category, sub_category, count} = req.body;
 
     if (!main_category || !sub_category) {
@@ -76,6 +84,14 @@ router.post('/', async (req, res) => {
 // 카테고리 수정
 router.put('/:id', async (req, res) => {
   try {
+    // 인증되지 않은 사용자는 접근 불가
+    if (!req.user?.authenticated) {
+      return res.status(401).json({
+        success: false,
+        error: '인증이 필요합니다.'
+      });
+    }
+
     const {id} = req.params;
     const {main_category, sub_category, count} = req.body;
 
@@ -121,6 +137,14 @@ router.put('/:id', async (req, res) => {
 // 카테고리 삭제
 router.delete('/:id', async (req, res) => {
   try {
+    // 인증되지 않은 사용자는 접근 불가
+    if (!req.user?.authenticated) {
+      return res.status(401).json({
+        success: false,
+        error: '인증이 필요합니다.'
+      });
+    }
+
     const {id} = req.params;
 
     const {error} = await supabase

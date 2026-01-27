@@ -3,8 +3,10 @@ import {Box, Table, TableHead, TableBody, TableRow, TableCell, TextField, Paper,
 import {Add, Delete} from '@mui/icons-material';
 import CategoryDropdown from './CategoryDropdown.js';
 import {expenseAPI} from '../lib/api.js';
+import {useAuth} from '../contexts/AuthContext.js';
 
 const ExpenseTable = memo(function ExpenseTable({expenses = [], onExpensesChange, month, type}) {
+  const {isAuthenticated} = useAuth();
   const [localExpenses, setLocalExpenses] = useState([]);
   const prevExpensesRef = useRef(null);
   const isInitialMount = useRef(true);
@@ -67,7 +69,7 @@ const ExpenseTable = memo(function ExpenseTable({expenses = [], onExpensesChange
       const isNoteField = field === 'note';
       
       // 필수 필드가 모두 채워졌고, id가 없으면 새로 저장
-      if (isComplete && !expense.id && month && type) {
+      if (isComplete && !expense.id && month && type && isAuthenticated) {
         const saveExpense = async () => {
           try {
             const expenseData = {
@@ -97,11 +99,15 @@ const ExpenseTable = memo(function ExpenseTable({expenses = [], onExpensesChange
             }
           } catch (error) {
             console.error('지출 내역 저장 오류:', error);
-            alert('지출 내역 저장 중 오류가 발생했습니다.');
+            if (error.message.includes('인증이 필요합니다')) {
+              alert(error.message);
+            } else {
+              alert('지출 내역 저장 중 오류가 발생했습니다.');
+            }
           }
         };
         saveExpense();
-      } else if (expense.id && month && type) {
+      } else if (expense.id && month && type && isAuthenticated) {
         // 기존 데이터 수정
         const updateExpense = async () => {
           try {
@@ -117,7 +123,11 @@ const ExpenseTable = memo(function ExpenseTable({expenses = [], onExpensesChange
             await expenseAPI.update(expense.id, expenseData);
           } catch (error) {
             console.error('지출 내역 수정 오류:', error);
-            alert('지출 내역 수정 중 오류가 발생했습니다.');
+            if (error.message.includes('인증이 필요합니다')) {
+              alert(error.message);
+            } else {
+              alert('지출 내역 수정 중 오류가 발생했습니다.');
+            }
           }
         };
         updateExpense();
@@ -129,7 +139,7 @@ const ExpenseTable = memo(function ExpenseTable({expenses = [], onExpensesChange
       }
       return updated;
     });
-  }, [onExpensesChange, month, type]);
+  }, [onExpensesChange, month, type, isAuthenticated]);
 
   const handleCategoryChange = useCallback((index, {major, minor}) => {
     setLocalExpenses((prev) => {
@@ -145,7 +155,7 @@ const ExpenseTable = memo(function ExpenseTable({expenses = [], onExpensesChange
       const isComplete = expense.date && expense.amount && expense.majorCategory && expense.minorCategory;
       
       // 필수 필드가 모두 채워졌고, id가 없으면 새로 저장
-      if (isComplete && !expense.id && month && type) {
+      if (isComplete && !expense.id && month && type && isAuthenticated) {
         const saveExpense = async () => {
           try {
             const expenseData = {
@@ -175,11 +185,15 @@ const ExpenseTable = memo(function ExpenseTable({expenses = [], onExpensesChange
             }
           } catch (error) {
             console.error('지출 내역 저장 오류:', error);
-            alert('지출 내역 저장 중 오류가 발생했습니다.');
+            if (error.message.includes('인증이 필요합니다')) {
+              alert(error.message);
+            } else {
+              alert('지출 내역 저장 중 오류가 발생했습니다.');
+            }
           }
         };
         saveExpense();
-      } else if (expense.id && month && type) {
+      } else if (expense.id && month && type && isAuthenticated) {
         // 기존 데이터 수정
         const updateExpense = async () => {
           try {
@@ -195,7 +209,11 @@ const ExpenseTable = memo(function ExpenseTable({expenses = [], onExpensesChange
             await expenseAPI.update(expense.id, expenseData);
           } catch (error) {
             console.error('지출 내역 수정 오류:', error);
-            alert('지출 내역 수정 중 오류가 발생했습니다.');
+            if (error.message.includes('인증이 필요합니다')) {
+              alert(error.message);
+            } else {
+              alert('지출 내역 수정 중 오류가 발생했습니다.');
+            }
           }
         };
         updateExpense();
@@ -206,9 +224,13 @@ const ExpenseTable = memo(function ExpenseTable({expenses = [], onExpensesChange
       }
       return updated;
     });
-  }, [onExpensesChange, month, type]);
+  }, [onExpensesChange, month, type, isAuthenticated]);
 
   const handleAddRow = useCallback(() => {
+    if (!isAuthenticated) {
+      alert('인증이 필요합니다. 올바른 토큰을 입력해주세요.');
+      return;
+    }
     const newRow = {
       date: '',
       amount: '',
@@ -223,9 +245,14 @@ const ExpenseTable = memo(function ExpenseTable({expenses = [], onExpensesChange
       }
       return updated;
     });
-  }, [onExpensesChange]);
+  }, [onExpensesChange, isAuthenticated]);
 
   const handleDeleteRow = useCallback(async (index) => {
+    if (!isAuthenticated) {
+      alert('인증이 필요합니다. 올바른 토큰을 입력해주세요.');
+      return;
+    }
+
     const expense = localExpenses[index];
     
     // 서버에 저장된 데이터면 서버에서도 삭제
@@ -234,7 +261,11 @@ const ExpenseTable = memo(function ExpenseTable({expenses = [], onExpensesChange
         await expenseAPI.delete(expense.id);
       } catch (error) {
         console.error('지출 내역 삭제 오류:', error);
-        alert('지출 내역 삭제 중 오류가 발생했습니다.');
+        if (error.message.includes('인증이 필요합니다')) {
+          alert(error.message);
+        } else {
+          alert('지출 내역 삭제 중 오류가 발생했습니다.');
+        }
         return;
       }
     }
@@ -256,7 +287,7 @@ const ExpenseTable = memo(function ExpenseTable({expenses = [], onExpensesChange
       }
       return updated;
     });
-  }, [localExpenses, onExpensesChange]);
+  }, [localExpenses, onExpensesChange, isAuthenticated]);
 
   return (
       <Paper elevation={1} sx={{overflow: 'hidden'}}>
@@ -266,6 +297,7 @@ const ExpenseTable = memo(function ExpenseTable({expenses = [], onExpensesChange
             size="small"
             startIcon={<Add />}
             onClick={handleAddRow}
+            disabled={!isAuthenticated}
           >
             추가
           </Button>
@@ -330,6 +362,7 @@ const ExpenseTable = memo(function ExpenseTable({expenses = [], onExpensesChange
                   <IconButton
                     size="small"
                     onClick={() => handleDeleteRow(index)}
+                    disabled={!isAuthenticated}
                   >
                     <Delete fontSize="small" />
                   </IconButton>

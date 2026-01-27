@@ -20,9 +20,11 @@ import {
 } from '@mui/material';
 import {Add, Edit, Delete} from '@mui/icons-material';
 import {useCategories} from '../hooks/useCategories.js';
+import {useAuth} from '../contexts/AuthContext.js';
 
 function CategoryPage() {
   const {categories, majorCategories, loading, error, addCategory, deleteCategory, updateCategory} = useCategories();
+  const {isAuthenticated} = useAuth();
   const [openDialog, setOpenDialog] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [formData, setFormData] = useState({mainCategory: '', subCategory: ''});
@@ -34,6 +36,10 @@ function CategoryPage() {
   };
 
   const handleOpenEdit = (categoryId, mainCategory, subCategory) => {
+    if (!isAuthenticated) {
+      alert('인증이 필요합니다. 올바른 토큰을 입력해주세요.');
+      return;
+    }
     setEditingCategory({id: categoryId, mainCategory, subCategory});
     setFormData({mainCategory, subCategory});
     setOpenDialog(true);
@@ -46,6 +52,11 @@ function CategoryPage() {
   };
 
   const handleSubmit = async () => {
+    if (!isAuthenticated) {
+      alert('인증이 필요합니다. 올바른 토큰을 입력해주세요.');
+      return;
+    }
+
     if (!formData.mainCategory || !formData.subCategory) {
       alert('대분류와 소분류를 모두 입력해주세요.');
       return;
@@ -70,20 +81,41 @@ function CategoryPage() {
       return;
     }
 
-    const result = editingCategory?.id
-      ? await updateCategory(editingCategory.id, main, sub)
-      : await addCategory(main, sub);
+    try {
+      const result = editingCategory?.id
+        ? await updateCategory(editingCategory.id, main, sub)
+        : await addCategory(main, sub);
 
-    if (result.success) {
-      handleCloseDialog();
-    } else {
-      alert('오류가 발생했습니다: ' + result.error);
+      if (result.success) {
+        handleCloseDialog();
+      } else {
+        alert('오류가 발생했습니다: ' + result.error);
+      }
+    } catch (error) {
+      if (error.message.includes('인증이 필요합니다')) {
+        alert(error.message);
+      } else {
+        alert('오류가 발생했습니다: ' + error.message);
+      }
     }
   };
 
   const handleDelete = async (id) => {
+    if (!isAuthenticated) {
+      alert('인증이 필요합니다. 올바른 토큰을 입력해주세요.');
+      return;
+    }
+
     if (window.confirm('정말 삭제하시겠습니까?')) {
-      await deleteCategory(id);
+      try {
+        await deleteCategory(id);
+      } catch (error) {
+        if (error.message.includes('인증이 필요합니다')) {
+          alert(error.message);
+        } else {
+          alert('오류가 발생했습니다: ' + error.message);
+        }
+      }
     }
   };
 
@@ -147,6 +179,7 @@ function CategoryPage() {
           size="small"
           startIcon={<Add />}
           onClick={handleOpenAdd}
+          disabled={!isAuthenticated}
         >
           카테고리 추가
         </Button>
@@ -220,6 +253,7 @@ function CategoryPage() {
                           onClick={() =>
                             handleOpenEdit(item.id, major, item.sub_category)
                           }
+                          disabled={!isAuthenticated}
                         >
                           <Edit fontSize="small" />
                         </IconButton>
@@ -232,6 +266,7 @@ function CategoryPage() {
                             transform: "translateY(-50%)",
                           }}
                           onClick={() => handleDelete(item.id)}
+                          disabled={!isAuthenticated}
                         >
                           <Delete fontSize="small" />
                         </IconButton>

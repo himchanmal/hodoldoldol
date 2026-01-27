@@ -1,12 +1,26 @@
 // 백엔드 API 클라이언트
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
+// 토큰 가져오기
+const getToken = () => {
+  return localStorage.getItem('auth_token');
+};
+
+// 인증 실패 콜백 (전역 설정)
+let onAuthFailure = null;
+
+export const setAuthFailureCallback = (callback) => {
+  onAuthFailure = callback;
+};
+
 // API 호출 헬퍼 함수
 async function apiCall(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
+  const token = getToken();
   const config = {
     headers: {
       'Content-Type': 'application/json',
+      ...(token && {Authorization: `Bearer ${token}`}),
       ...options.headers
     },
     ...options
@@ -17,6 +31,18 @@ async function apiCall(endpoint, options = {}) {
     const data = await response.json();
 
     if (!response.ok) {
+      // 401 에러 시 인증 실패 처리
+      if (response.status === 401) {
+        if (onAuthFailure) {
+          onAuthFailure();
+        }
+        // 조회(GET)가 아닌 경우에만 에러 throw
+        if (options.method && options.method !== 'GET') {
+          throw new Error('인증이 필요합니다. 올바른 토큰을 입력해주세요.');
+        }
+        // GET 요청은 빈 데이터 반환
+        return {success: true, data: []};
+      }
       throw new Error(data.error || `HTTP error! status: ${response.status}`);
     }
 

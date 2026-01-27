@@ -1,8 +1,10 @@
 import React, {useState, useCallback} from 'react';
-import {ThemeProvider, Box, AppBar, Toolbar, Typography, Container, CssBaseline} from '@mui/material';
+import {ThemeProvider, Box, Container, CssBaseline} from '@mui/material';
 import theme from './theme.js';
 import {CategoryProvider} from './contexts/CategoryContext.js';
+import {AuthProvider} from './contexts/AuthContext.js';
 import Tabs from './components/Tabs.js';
+import Header from './components/Header.js';
 import CategoryPage from './pages/CategoryPage.js';
 import SummaryPage from './pages/SummaryPage.js';
 import MonthPage from './pages/MonthPage.js';
@@ -85,23 +87,23 @@ function App() {
       <CssBaseline />
       <CategoryProvider>
         <Box sx={{display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: 'background.default'}}>
-        <AppBar position="sticky" sx={{bgcolor: 'primary.main', borderRadius: 0}}>
-          <Toolbar>
-            <Typography variant="h6" component="div" sx={{flexGrow: 1, textAlign: 'center', fontWeight: 500}}>
-              호돌이와 돌돌이 가계부
-            </Typography>
-          </Toolbar>
-        </AppBar>
-        <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
-        <Box component="main" sx={{flexGrow: 1, overflowY: 'auto'}}>
-          <Container maxWidth="xl" sx={{py: 2}}>
-            {renderTabContent()}
-          </Container>
+          <Header />
+          <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+          <Box component="main" sx={{flexGrow: 1, overflowY: 'auto'}}>
+            <Container maxWidth="xl" sx={{py: 2}}>
+              {renderTabContent()}
+            </Container>
+          </Box>
         </Box>
-      </Box>
       </CategoryProvider>
     </ThemeProvider>
   );
 }
 
-export default App;
+export default function AppWrapper() {
+  return (
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  );
+}
