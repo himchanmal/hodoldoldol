@@ -23,9 +23,8 @@ const theme = createTheme({
     }
   },
   typography: {
-    fontFamily: [
-      'Pretendard',
-    ].join(','),
+    fontFamily: 'Pretendard', 
+    fontSize: 14,
     h4: {
       fontWeight: 700,
       letterSpacing: '-0.02em'
@@ -56,6 +55,12 @@ const theme = createTheme({
         root: {
           '& .MuiOutlinedInput-root': {
             borderRadius: 4,
+            minHeight: 40,
+            '& .MuiOutlinedInput-input': {
+              fontSize: 14,
+              minHeight: 24,
+              boxSizing: 'border-box'
+            },
             '&:hover fieldset': {
               borderColor: '#1e3a8a'
             },
@@ -70,7 +75,11 @@ const theme = createTheme({
     MuiSelect: {
       styleOverrides: {
         root: {
-          borderRadius: 4
+          borderRadius: 4,
+          fontSize: 14
+        },
+        select: {
+          fontSize: 14
         }
       }
     },

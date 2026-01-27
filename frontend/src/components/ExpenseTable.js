@@ -296,9 +296,14 @@ const ExpenseTable = memo(function ExpenseTable({expenses = [], onExpensesChange
                 </TableCell>
                 <TableCell sx={{textAlign: 'center', py: 1, minWidth: 120}}>
                   <TextField
-                    type="number"
-                    value={expense.amount || ''}
-                    onChange={(e) => handleExpenseChange(index, 'amount', e.target.value)}
+                    type="text"
+                    value={expense.amount ? Number(expense.amount).toLocaleString('ko-KR') : ''}
+                    onChange={(e) => {
+                      const numericValue = e.target.value.replace(/,/g, '');
+                      if (numericValue === '' || /^\d+$/.test(numericValue)) {
+                        handleExpenseChange(index, 'amount', numericValue);
+                      }
+                    }}
                     placeholder="금액"
                     size="small"
                     fullWidth
