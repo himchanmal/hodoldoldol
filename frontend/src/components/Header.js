@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {AppBar, Toolbar, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Box} from '@mui/material';
 import {useAuth} from '../contexts/AuthContext.js';
 
@@ -6,6 +6,7 @@ function Header() {
   const {isAuthenticated, setAuth} = useAuth();
   const [openDialog, setOpenDialog] = useState(false);
   const [token, setToken] = useState('');
+  const [currentToken, setCurrentToken] = useState(() => localStorage.getItem('auth_token') || '');
 
   const handleOpenDialog = () => {
     setOpenDialog(true);
@@ -22,15 +23,29 @@ function Header() {
       return;
     }
 
-    localStorage.setItem('auth_token', token.trim());
+    const trimmed = token.trim();
+    localStorage.setItem('auth_token', trimmed);
+    setCurrentToken(trimmed);
     setAuth(true);
     handleCloseDialog();
   };
 
   const handleLogout = () => {
     localStorage.removeItem('auth_token');
+    setCurrentToken('');
     setAuth(false);
     handleCloseDialog();
+  };
+
+  useEffect(() => {
+    const stored = localStorage.getItem('auth_token') || '';
+    setCurrentToken(stored);
+  }, []);
+
+  const getButtonLabel = () => {
+    if (currentToken === 'hodol') return '호돌이';
+    if (currentToken === 'doldol') return '돌돌이';
+    return '누구냐 넌';
   };
 
   return (
@@ -52,7 +67,7 @@ function Header() {
               }
             }}
           >
-            누구냐 넌
+            {getButtonLabel()}
           </Button>
         </Toolbar>
       </AppBar>
@@ -63,7 +78,9 @@ function Header() {
           {isAuthenticated ? (
             <Box sx={{py: 2}}>
               <Typography variant="body2" color="text.secondary">
-                인증된 사용자입니다.
+                {(currentToken === 'hodol' || currentToken === 'doldol')
+                  ? '호돌이와 돌돌이입니다.'
+                  : '조회만 가능한 사용자입니다.'}
               </Typography>
             </Box>
           ) : (

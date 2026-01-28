@@ -324,6 +324,7 @@ const ExpenseTable = memo(function ExpenseTable({expenses = [], onExpensesChange
                     size="small"
                     fullWidth
                     InputLabelProps={{shrink: true}}
+                    disabled={!isAuthenticated}
                   />
                 </TableCell>
                 <TableCell sx={{textAlign: 'center', py: 1, minWidth: 120}}>
@@ -339,6 +340,7 @@ const ExpenseTable = memo(function ExpenseTable({expenses = [], onExpensesChange
                     placeholder="금액"
                     size="small"
                     fullWidth
+                    disabled={!isAuthenticated}
                   />
                 </TableCell>
                 <TableCell colSpan={2} sx={{textAlign: 'center', py: 1, px: 1}}>
@@ -346,6 +348,7 @@ const ExpenseTable = memo(function ExpenseTable({expenses = [], onExpensesChange
                     selectedMajor={expense.majorCategory}
                     selectedMinor={expense.minorCategory}
                     onCategoryChange={(categories) => handleCategoryChange(index, categories)}
+                    disabled={!isAuthenticated}
                   />
                 </TableCell>
                 <TableCell sx={{textAlign: 'center', py: 1, minWidth: 150}}>
@@ -356,6 +359,7 @@ const ExpenseTable = memo(function ExpenseTable({expenses = [], onExpensesChange
                     placeholder="메모"
                     size="small"
                     fullWidth
+                    disabled={!isAuthenticated}
                   />
                 </TableCell>
                 <TableCell sx={{textAlign: 'center', py: 1, width: 50}}>

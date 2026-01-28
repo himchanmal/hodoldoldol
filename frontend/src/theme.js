@@ -33,11 +33,19 @@ const theme = createTheme({
   },
   components: {
     MuiButton: {
+      defaultProps: {
+        disableRipple: true,
+        disableElevation: true
+      },
       styleOverrides: {
         root: {
           textTransform: 'none',
           fontWeight: 500,
-          borderRadius: 8
+          borderRadius: 8,
+          '&.Mui-focusVisible': {
+            outline: 'none',
+            boxShadow: 'none'
+          }
         }
       }
     },

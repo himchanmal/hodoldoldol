@@ -2,7 +2,7 @@ import React, {useState, useEffect, memo} from 'react';
 import {Box, Select, MenuItem, FormControl} from '@mui/material';
 import {useCategoryContext} from '../contexts/CategoryContext.js';
 
-const CategoryDropdown = memo(function CategoryDropdown({onCategoryChange, selectedMajor, selectedMinor}) {
+const CategoryDropdown = memo(function CategoryDropdown({onCategoryChange, selectedMajor, selectedMinor, disabled = false}) {
   const {getCategoriesForDropdown, majorCategories} = useCategoryContext();
   const categories = getCategoriesForDropdown();
   
@@ -42,6 +42,7 @@ const CategoryDropdown = memo(function CategoryDropdown({onCategoryChange, selec
             }
           }
         }}
+        disabled={disabled}
       >
         <Select
           value={majorCategory ? majorCategory : ''}
@@ -66,7 +67,7 @@ const CategoryDropdown = memo(function CategoryDropdown({onCategoryChange, selec
             bgcolor: 'background.paper'
           }
         }}
-        disabled={!majorCategory}
+        disabled={disabled || !majorCategory}
       >
         <Select
           value={minorCategory ? minorCategory : ''}
