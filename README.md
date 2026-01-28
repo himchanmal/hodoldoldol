@@ -65,6 +65,7 @@ SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 PORT=3001
 NODE_ENV=development
 FRONTEND_URL=http://localhost:3000
+ALLOWED_TOKENS=token1,token2
 ```
 
 ## 기능
@@ -73,7 +74,7 @@ FRONTEND_URL=http://localhost:3000
 - ✅ 월별 지출 내역 기록
 - ✅ 호돌이와 돌돌이, 호돌이, 돌돌이 각각의 지출 관리
 - ✅ 실시간 데이터 동기화 (Supabase)
-- ✅ 다중 기기 지원
+- ✅ 토큰 기반 인증 (2인 전용 쓰기, 그 외 조회 전용)
 
 ## 배포
 
@@ -90,13 +91,12 @@ FRONTEND_URL=http://localhost:3000
 
 ### 백엔드
 
-Railway, Render, Fly.io 등의 플랫폼에 배포합니다:
+Railway에 배포합니다:
 - Railway: `backend/` 폴더를 루트로 설정
-- Render: `backend/` 폴더를 루트로 설정
-- Fly.io: `backend/` 폴더를 루트로 설정
 
 환경 변수:
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY` 또는 `SUPABASE_SECRET_KEY`
 - `PORT` (선택사항, 기본값: 3001)
 - `FRONTEND_URL` (CORS 설정용)
+- `ALLOWED_TOKENS` (인증용 토큰값)
