@@ -104,7 +104,7 @@ function Header() {
         </DialogContent>
         <DialogActions>
           {isAuthenticated ? (
-            <Button onClick={handleLogout} color="error">
+            <Button onClick={handleLogout} color="primary">
               로그아웃
             </Button>
           ) : (

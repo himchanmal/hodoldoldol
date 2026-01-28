@@ -7,7 +7,6 @@ import {
   TableBody,
   TableRow,
   TableCell,
-  Paper,
   Button,
   Dialog,
   DialogTitle,
@@ -185,108 +184,108 @@ function CategoryPage() {
         </Button>
       </Box>
 
-      <Paper elevation={1}>
-        <Box sx={{ overflowX: "auto" }}>
-          <Table>
-            <TableHead>
-              <TableRow sx={{ bgcolor: "grey.100" }}>
-                <TableCell
-                  sx={{ fontWeight: 600, textAlign: "center", px: 1, py: 0.75 }}
+
+      <Box sx={{ overflowX: "auto" }}>
+        <Table>
+          <TableHead>
+            <TableRow sx={{ bgcolor: "grey.100" }}>
+              <TableCell
+                sx={{ fontWeight: 600, textAlign: "center", px: 1, py: 0.75 }}
+              >
+                대분류
+              </TableCell>
+              <TableCell
+                colSpan={maxSubCategoryCount || 1}
+                sx={{ fontWeight: 600, textAlign: "center", px: 1, py: 0.75 }}
+              >
+                소분류
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {sortedMajorCategories.map((major) => {
+              const subCategories = sortedCategories[major] || [];
+              const emptyCellCount =
+                maxSubCategoryCount - subCategories.length;
+              return (
+                <TableRow
+                  key={major}
+                  sx={{ "&:hover": { bgcolor: "grey.50" } }}
                 >
-                  대분류
-                </TableCell>
-                <TableCell
-                  colSpan={maxSubCategoryCount || 1}
-                  sx={{ fontWeight: 600, textAlign: "center", px: 1, py: 0.75 }}
-                >
-                  소분류
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {sortedMajorCategories.map((major) => {
-                const subCategories = sortedCategories[major] || [];
-                const emptyCellCount =
-                  maxSubCategoryCount - subCategories.length;
-                return (
-                  <TableRow
-                    key={major}
-                    sx={{ "&:hover": { bgcolor: "grey.50" } }}
+                  <TableCell
+                    sx={{
+                      fontWeight: 500,
+                      textAlign: "center",
+                      minWidth: 140,
+                      bgcolor: "grey.50",
+                      px: 1,
+                      py: 0.75,
+                    }}
                   >
+                    {major}
+                  </TableCell>
+                  {subCategories.map((item) => (
                     <TableCell
+                      key={item.id}
                       sx={{
-                        fontWeight: 500,
                         textAlign: "center",
-                        minWidth: 140,
-                        bgcolor: "grey.50",
-                        px: 1,
-                        py: 0.75,
+                        position: "relative",
+                        whiteSpace: "nowrap",
+                        py: 1,
+                        px: 0,
                       }}
                     >
-                      {major}
-                    </TableCell>
-                    {subCategories.map((item) => (
-                      <TableCell
-                        key={item.id}
-                        sx={{
-                          textAlign: "center",
-                          position: "relative",
-                          whiteSpace: "nowrap",
-                          py: 1,
-                          px: 0,
-                        }}
+                      <Box
+                        component="span"
+                        sx={{ pr: 6, display: "inline-block" }}
                       >
-                        <Box
-                          component="span"
-                          sx={{ pr: 6, display: "inline-block" }}
-                        >
-                          {item.sub_category}
-                        </Box>
-                        <IconButton
-                          size="small"
-                          sx={{
-                            position: "absolute",
-                            right: 4,
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                          }}
-                          onClick={() =>
-                            handleOpenEdit(item.id, major, item.sub_category)
-                          }
-                          disabled={!isAuthenticated}
-                        >
-                          <Edit fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          sx={{
-                            position: "absolute",
-                            right: 28,
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                          }}
-                          onClick={() => handleDelete(item.id)}
-                          disabled={!isAuthenticated}
-                        >
-                          <Delete fontSize="small" />
-                        </IconButton>
-                      </TableCell>
+                        {item.sub_category}
+                      </Box>
+                      <IconButton
+                        size="small"
+                        sx={{
+                          position: "absolute",
+                          right: 4,
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                        }}
+                        onClick={() =>
+                          handleOpenEdit(item.id, major, item.sub_category)
+                        }
+                        disabled={!isAuthenticated}
+                      >
+                        <Edit fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        sx={{
+                          position: "absolute",
+                          right: 28,
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                        }}
+                        onClick={() => handleDelete(item.id)}
+                        disabled={!isAuthenticated}
+                      >
+                        <Delete fontSize="small" />
+                      </IconButton>
+                    </TableCell>
+                  ))}
+                  {Array(emptyCellCount)
+                    .fill(null)
+                    .map((_, index) => (
+                      <TableCell
+                        key={`empty-${index}`}
+                        sx={{ textAlign: "center", px: 1, py: 0.75 }}
+                      ></TableCell>
                     ))}
-                    {Array(emptyCellCount)
-                      .fill(null)
-                      .map((_, index) => (
-                        <TableCell
-                          key={`empty-${index}`}
-                          sx={{ textAlign: "center", px: 1, py: 0.75 }}
-                        ></TableCell>
-                      ))}
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </Box>
-      </Paper>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </Box>
+
 
       <Dialog
         open={openDialog}

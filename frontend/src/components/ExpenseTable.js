@@ -1,5 +1,5 @@
 import React, {useState, useEffect, memo, useCallback, useRef} from 'react';
-import {Box, Table, TableHead, TableBody, TableRow, TableCell, TextField, Paper, Button, IconButton} from '@mui/material';
+import {Box, Table, TableHead, TableBody, TableRow, TableCell, TextField, Button, IconButton} from '@mui/material';
 import {Add, Delete} from '@mui/icons-material';
 import CategoryDropdown from './CategoryDropdown.js';
 import {expenseAPI} from '../lib/api.js';
@@ -290,7 +290,7 @@ const ExpenseTable = memo(function ExpenseTable({expenses = [], onExpensesChange
   }, [localExpenses, onExpensesChange, isAuthenticated]);
 
   return (
-      <Paper elevation={1} sx={{overflow: 'hidden'}}>
+      <Box sx={{overflow: 'hidden'}}>
         <Box sx={{display: 'flex', justifyContent: 'flex-end', p: 1, borderBottom: 1, borderColor: 'divider'}}>
           <Button
             variant="outlined"
@@ -376,7 +376,7 @@ const ExpenseTable = memo(function ExpenseTable({expenses = [], onExpensesChange
           </TableBody>
         </Table>
       </Box>
-    </Paper>
+    </Box>
   );
 });
 
