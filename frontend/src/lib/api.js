@@ -1,10 +1,19 @@
-// 백엔드 API 클라이언트
+import {AUTH_REQUIRED_MESSAGE} from '../utils/error.js';
+
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
-// 토큰 가져오기
 const getToken = () => {
   return localStorage.getItem('auth_token');
 };
+
+// fetch 헤더는 ISO-8859-1만 허용. 비-ASCII 토큰은 헤더에 넣지 않음
+function isTokenSafeForHeader(token) {
+  if (!token || typeof token !== 'string') return false;
+  for (let i = 0; i < token.length; i++) {
+    if (token.charCodeAt(i) > 255) return false;
+  }
+  return true;
+}
 
 // 인증 실패 콜백 (전역 설정)
 let onAuthFailure = null;
@@ -20,7 +29,7 @@ async function apiCall(endpoint, options = {}) {
   const config = {
     headers: {
       'Content-Type': 'application/json',
-      ...(token && {Authorization: `Bearer ${token}`}),
+      ...(token && isTokenSafeForHeader(token) && {Authorization: `Bearer ${token}`}),
       ...options.headers
     },
     ...options
@@ -38,7 +47,7 @@ async function apiCall(endpoint, options = {}) {
         }
         // 조회(GET)가 아닌 경우에만 에러 throw
         if (options.method && options.method !== 'GET') {
-          throw new Error('인증이 필요합니다. 올바른 토큰을 입력해주세요.');
+          throw new Error(AUTH_REQUIRED_MESSAGE);
         }
         // GET 요청은 빈 데이터 반환
         return {success: true, data: []};

@@ -54,7 +54,7 @@ const theme = createTheme({
         root: {
           '& .MuiOutlinedInput-root': {
             borderRadius: 4,
-            minHeight: 40,
+            minHeight: 38,
             '& .MuiOutlinedInput-input': {
               fontSize: 14,
               minHeight: 24,
@@ -75,7 +75,11 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 4,
-          fontSize: 14
+          fontSize: 14,
+          '& .MuiSelect-select': {
+            minWidth: 72,
+            minHeight: 21,
+          }
         },
         select: {
           fontSize: 14

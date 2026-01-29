@@ -3,23 +3,16 @@ import {Box, CircularProgress, Alert} from '@mui/material';
 import ExpenseTable from '../components/ExpenseTable.js';
 import Tabs from '../components/Tabs.js';
 import {expenseAPI} from '../lib/api.js';
+import {apiExpenseToForm} from '../utils/expense.js';
 
 function MonthPage({month, expensesBoth, expensesHodol, expensesDoldol, onExpensesBothChange, onExpensesHodolChange, onExpensesDoldolChange}) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
 
-  // API 데이터를 ExpenseTable 형식으로 변환
   const transformExpenseData = (apiData) => {
-    if (!apiData || !apiData.data) return [];
-    return apiData.data.map(expense => ({
-      id: expense.id,
-      date: expense.date ? expense.date.split('T')[0] : '', // YYYY-MM-DD 형식으로 변환
-      amount: expense.amount || '',
-      majorCategory: expense.major_category || '',
-      minorCategory: expense.minor_category || '',
-      note: expense.note || ''
-    }));
+    if (!apiData?.data) return [];
+    return apiData.data.map((expense) => apiExpenseToForm(expense)).filter(Boolean);
   };
 
   // 데이터 로드(month가 변경될 때만)

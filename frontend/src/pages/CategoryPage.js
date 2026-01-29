@@ -20,10 +20,11 @@ import {
 import {Add, Edit, Delete} from '@mui/icons-material';
 import {useCategories} from '../hooks/useCategories.js';
 import {useAuth} from '../contexts/AuthContext.js';
+import {AUTH_REQUIRED_MESSAGE, isAuthError} from '../utils/error.js';
 
 function CategoryPage() {
   const {categories, majorCategories, loading, error, addCategory, deleteCategory, updateCategory} = useCategories();
-  const {isAuthenticated} = useAuth();
+  const {canWrite} = useAuth();
   const [openDialog, setOpenDialog] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [formData, setFormData] = useState({mainCategory: '', subCategory: ''});
@@ -35,8 +36,8 @@ function CategoryPage() {
   };
 
   const handleOpenEdit = (categoryId, mainCategory, subCategory) => {
-    if (!isAuthenticated) {
-      alert('인증이 필요합니다. 올바른 토큰을 입력해주세요.');
+    if (!canWrite) {
+      alert(AUTH_REQUIRED_MESSAGE);
       return;
     }
     setEditingCategory({id: categoryId, mainCategory, subCategory});
@@ -51,8 +52,8 @@ function CategoryPage() {
   };
 
   const handleSubmit = async () => {
-    if (!isAuthenticated) {
-      alert('인증이 필요합니다. 올바른 토큰을 입력해주세요.');
+    if (!canWrite) {
+      alert(AUTH_REQUIRED_MESSAGE);
       return;
     }
 
@@ -91,17 +92,13 @@ function CategoryPage() {
         alert('오류가 발생했습니다: ' + result.error);
       }
     } catch (error) {
-      if (error.message.includes('인증이 필요합니다')) {
-        alert(error.message);
-      } else {
-        alert('오류가 발생했습니다: ' + error.message);
-      }
+      alert(isAuthError(error) ? error.message : '오류가 발생했습니다: ' + error.message);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!isAuthenticated) {
-      alert('인증이 필요합니다. 올바른 토큰을 입력해주세요.');
+    if (!canWrite) {
+      alert(AUTH_REQUIRED_MESSAGE);
       return;
     }
 
@@ -109,11 +106,7 @@ function CategoryPage() {
       try {
         await deleteCategory(id);
       } catch (error) {
-        if (error.message.includes('인증이 필요합니다')) {
-          alert(error.message);
-        } else {
-          alert('오류가 발생했습니다: ' + error.message);
-        }
+        alert(isAuthError(error) ? error.message : '오류가 발생했습니다: ' + error.message);
       }
     }
   };
@@ -178,7 +171,7 @@ function CategoryPage() {
           size="small"
           startIcon={<Add />}
           onClick={handleOpenAdd}
-          disabled={!isAuthenticated}
+          disabled={!canWrite}
         >
           카테고리 추가
         </Button>
@@ -252,7 +245,7 @@ function CategoryPage() {
                         onClick={() =>
                           handleOpenEdit(item.id, major, item.sub_category)
                         }
-                        disabled={!isAuthenticated}
+                        disabled={!canWrite}
                       >
                         <Edit fontSize="small" />
                       </IconButton>
@@ -265,7 +258,7 @@ function CategoryPage() {
                           transform: "translateY(-50%)",
                         }}
                         onClick={() => handleDelete(item.id)}
-                        disabled={!isAuthenticated}
+                        disabled={!canWrite}
                       >
                         <Delete fontSize="small" />
                       </IconButton>

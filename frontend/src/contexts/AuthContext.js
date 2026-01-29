@@ -2,35 +2,26 @@ import React, {createContext, useContext, useState, useEffect} from 'react';
 
 const AuthContext = createContext(null);
 
-export function AuthProvider({children}) {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return !!localStorage.getItem('auth_token');
-  });
+const WRITE_ALLOWED_TOKENS = ['hodol', 'doldol'];
 
-  // 토큰이 있으면 인증된 것으로 간주
-  // 실제 인증은 API 호출 시 401 에러로 확인
+export function AuthProvider({children}) {
+  const [token, setToken] = useState(() => localStorage.getItem('auth_token') || '');
+
+  const isAuthenticated = !!token;
+  const canWrite = WRITE_ALLOWED_TOKENS.includes(token);
+
   useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    setIsAuthenticated(!!token);
+    const stored = localStorage.getItem('auth_token') || '';
+    setToken(stored);
   }, []);
 
-  const checkAuth = async () => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      setIsAuthenticated(false);
-      return false;
-    }
-    // 실제 인증 확인은 API 호출 시 에러로 판단
-    setIsAuthenticated(true);
-    return true;
-  };
-
-  const setAuth = (authenticated) => {
-    setIsAuthenticated(authenticated);
+  const setAuth = (authenticated, newToken = '') => {
+    const value = authenticated ? newToken : '';
+    setToken(value);
   };
 
   return (
-    <AuthContext.Provider value={{isAuthenticated, checkAuth, setAuth}}>
+    <AuthContext.Provider value={{isAuthenticated, canWrite, setAuth}}>
       {children}
     </AuthContext.Provider>
   );

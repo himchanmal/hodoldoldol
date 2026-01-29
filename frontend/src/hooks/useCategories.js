@@ -1,5 +1,6 @@
 import {useState, useEffect} from 'react';
 import {categoryAPI} from '../lib/api.js';
+import {sortByCountThenKo} from '../utils/category.js';
 
 export function useCategories() {
   const [categories, setCategories] = useState({});
@@ -38,22 +39,13 @@ export function useCategories() {
         });
       });
 
-      // 대분류를 count 기준으로 정렬(같으면 가나다 순)
-      majors.sort((a, b) => {
-        if (b.count !== a.count) {
-          return b.count - a.count;
-        }
-        return a.name.localeCompare(b.name, 'ko');
-      });
-
-      // 소분류도 각 대분류 내에서 count 기준으로 정렬(같으면 가나다 순)
+      majors.sort((a, b) =>
+        sortByCountThenKo(a, b, (m) => m.count, (m) => m.name)
+      );
       Object.keys(categoriesMap).forEach((major) => {
-        categoriesMap[major].sort((a, b) => {
-          if (b.count !== a.count) {
-            return b.count - a.count;
-          }
-          return a.sub_category.localeCompare(b.sub_category, 'ko');
-        });
+        categoriesMap[major].sort((a, b) =>
+          sortByCountThenKo(a, b, (s) => s.count, (s) => s.sub_category)
+        );
       });
 
       setCategories(categoriesMap);

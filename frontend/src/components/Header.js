@@ -26,7 +26,7 @@ function Header() {
     const trimmed = token.trim();
     localStorage.setItem('auth_token', trimmed);
     setCurrentToken(trimmed);
-    setAuth(true);
+    setAuth(true, trimmed);
     handleCloseDialog();
   };
 
