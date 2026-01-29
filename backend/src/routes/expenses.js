@@ -20,7 +20,9 @@ router.get('/', async (req, res) => {
       query = query.eq('type', type);
     }
 
-    query = query.order('date', {ascending: false});
+    query = query
+      .order('date', {ascending: false})
+      .order('created_at', {ascending: false});
 
     const {data, error} = await query;
 
