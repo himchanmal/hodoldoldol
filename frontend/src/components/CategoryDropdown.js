@@ -29,6 +29,10 @@ const CategoryDropdown = memo(function CategoryDropdown({onCategoryChange, selec
 
   const minorCategories = majorCategory ? (categories[majorCategory] || []) : [];
 
+  // MUI Select는 value가 반드시 옵션 목록에 있어야 함. 카테고리 로딩 전/삭제된 카테고리면 ''로 표시
+  const safeMajorValue = majorCategory && majorCategories.includes(majorCategory) ? majorCategory : '';
+  const safeMinorValue = minorCategory && minorCategories.includes(minorCategory) ? minorCategory : '';
+
   return (
     <Box sx={{display: 'flex', gap: 1}}>
       <FormControl
@@ -45,7 +49,7 @@ const CategoryDropdown = memo(function CategoryDropdown({onCategoryChange, selec
         disabled={disabled}
       >
         <Select
-          value={majorCategory ? majorCategory : ''}
+          value={safeMajorValue}
           onChange={handleMajorChange}
           displayEmpty
         >
@@ -70,7 +74,7 @@ const CategoryDropdown = memo(function CategoryDropdown({onCategoryChange, selec
         disabled={disabled || !majorCategory}
       >
         <Select
-          value={minorCategory ? minorCategory : ''}
+          value={safeMinorValue}
           onChange={handleMinorChange}
           displayEmpty
         >

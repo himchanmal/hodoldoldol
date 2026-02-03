@@ -10,31 +10,27 @@ function MonthPage({month, expensesBoth, expensesHodol, expensesDoldol, onExpens
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
 
-  const transformExpenseData = (apiData) => {
-    if (!apiData?.data) return [];
-    return apiData.data.map((expense) => apiExpenseToForm(expense)).filter(Boolean);
-  };
-
   // 데이터 로드(month가 변경될 때만)
   useEffect(() => {
+    if (!month) return;
+    setLoading(true);
+    setError(null);
+
     const loadExpenses = async () => {
-      setLoading(true);
-      setError(null);
-      
       try {
         const monthNum = parseInt(month);
-        
-        // 세 가지 타입의 데이터를 병렬로 가져오기
-        const [bothRes, hodolRes, doldolRes] = await Promise.all([
-          expenseAPI.getAll(monthNum, 'both'),
-          expenseAPI.getAll(monthNum, 'hodol'),
-          expenseAPI.getAll(monthNum, 'doldol')
-        ]);
+        const res = await expenseAPI.getAll(monthNum);
+        const list = res?.data ?? [];
 
-        // 데이터 변환 및 부모 컴포넌트에 전달
-        const bothData = transformExpenseData(bothRes);
-        const hodolData = transformExpenseData(hodolRes);
-        const doldolData = transformExpenseData(doldolRes);
+        const byType = { both: [], hodol: [], doldol: [] };
+        list.forEach((e) => {
+          const t = (e.type || 'both').toLowerCase();
+          if (byType[t]) byType[t].push(e);
+        });
+
+        const bothData = (byType.both || []).map((expense) => apiExpenseToForm(expense)).filter(Boolean);
+        const hodolData = (byType.hodol || []).map((expense) => apiExpenseToForm(expense)).filter(Boolean);
+        const doldolData = (byType.doldol || []).map((expense) => apiExpenseToForm(expense)).filter(Boolean);
 
         onExpensesBothChange(bothData);
         onExpensesHodolChange(hodolData);
@@ -47,9 +43,7 @@ function MonthPage({month, expensesBoth, expensesHodol, expensesDoldol, onExpens
       }
     };
 
-    if (month) {
-      loadExpenses();
-    }
+    loadExpenses();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [month]); // month만 dependency로 사용
 
