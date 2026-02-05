@@ -102,7 +102,7 @@ function SummaryDetailDialog({open, onClose, detailContext, minorBreakdown, form
               </TableBody>
             </Table>
           ) : (
-            <Table size="small" sx={{tableLayout: 'fixed', minWidth: 300}}>
+            <Table size="small" sx={{tableLayout: 'fixed', minWidth: 240}}>
               <colgroup>
                 <col style={{width: '60%'}} />
                 <col style={{width: '40%'}} />
