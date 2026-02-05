@@ -15,6 +15,8 @@ export const TYPES = [
 
 // 셀 최소 너비 (SummaryPage 메인 테이블)
 export const SUMMARY_CELL_MIN_WIDTH = 100;
+// 합계 열(금액+비율 표시) 최소 너비
+export const SUMMARY_SUM_CELL_MIN_WIDTH = 150;
 
 // 공통 테이블 스타일
 export const summaryHeaderRowSx = { bgcolor: 'grey.100' };
@@ -55,3 +57,8 @@ export const summaryDialogHeaderCellSx = {
   fontWeight: 600,
   textAlign: 'right'
 };
+
+/** { both, hodol, doldol } 합계 */
+export function sumTypeRow(o) {
+  return (o?.both ?? 0) + (o?.hodol ?? 0) + (o?.doldol ?? 0);
+}
