@@ -5,8 +5,11 @@ import {showAuthError, AUTH_REQUIRED_MESSAGE, isAuthError} from '../utils/error.
 
 const DEBOUNCE_MS = 500;
 
+const AMOUNT_ZERO_MESSAGE = '금액은 0보다 커야 합니다.';
+
 export function useExpenseTable({expenses = [], onExpensesChange, month, type, isAuthenticated, canWrite = false}) {
   const [localExpenses, setLocalExpenses] = useState([]);
+  const [snackbarMessage, setSnackbarMessage] = useState(null);
   const prevExpensesRef = useRef(null);
   const lastExpensesFromPropsRef = useRef(expenses);
   const isInitialMount = useRef(true);
@@ -87,9 +90,10 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
 
   const tryCreateExpense = useCallback(
     (index, expense) => {
+      const numAmount = getNumericAmount(expense.amount);
       if (
         !expense.date ||
-        getNumericAmount(expense.amount) == null ||
+        numAmount == null ||
         !expense.majorCategory ||
         !expense.minorCategory ||
         !month ||
@@ -97,6 +101,10 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
         !canWrite ||
         expense.id
       ) {
+        return;
+      }
+      if (numAmount === 0) {
+        setSnackbarMessage(AMOUNT_ZERO_MESSAGE);
         return;
       }
       if (creatingIndicesRef.current.has(index)) return;
@@ -146,11 +154,23 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
         if (isComplete && !expense.id && month && type && isAuthenticated) {
           tryCreateExpense(index, expense);
         } else if (expense.id && month && type && isAuthenticated) {
-          scheduleDebouncedUpdate(
-            index,
-            expense.id,
-            formExpenseToPayload(expense, month, type)
-          );
+          const numAmount = getNumericAmount(expense.amount);
+          if (numAmount == null) {
+            if (updateTimeoutsRef.current[index] != null) {
+              clearTimeout(updateTimeoutsRef.current[index]);
+              delete updateTimeoutsRef.current[index];
+              delete pendingUpdatesRef.current[index];
+            }
+          } else if (numAmount === 0) {
+            if (updateTimeoutsRef.current[index] != null) {
+              clearTimeout(updateTimeoutsRef.current[index]);
+              delete updateTimeoutsRef.current[index];
+              delete pendingUpdatesRef.current[index];
+            }
+            setSnackbarMessage(AMOUNT_ZERO_MESSAGE);
+          } else {
+            scheduleDebouncedUpdate(index, expense.id, formExpenseToPayload(expense, month, type));
+          }
         }
 
         if (onExpensesChange && (!isNoteField || isComplete)) {
@@ -189,11 +209,23 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
         if (isComplete && !expense.id && month && type && isAuthenticated) {
           tryCreateExpense(index, expense);
         } else if (expense.id && month && type && isAuthenticated) {
-          scheduleDebouncedUpdate(
-            index,
-            expense.id,
-            formExpenseToPayload(expense, month, type)
-          );
+          const numAmount = getNumericAmount(expense.amount);
+          if (numAmount == null) {
+            if (updateTimeoutsRef.current[index] != null) {
+              clearTimeout(updateTimeoutsRef.current[index]);
+              delete updateTimeoutsRef.current[index];
+              delete pendingUpdatesRef.current[index];
+            }
+          } else if (numAmount === 0) {
+            if (updateTimeoutsRef.current[index] != null) {
+              clearTimeout(updateTimeoutsRef.current[index]);
+              delete updateTimeoutsRef.current[index];
+              delete pendingUpdatesRef.current[index];
+            }
+            setSnackbarMessage(AMOUNT_ZERO_MESSAGE);
+          } else {
+            scheduleDebouncedUpdate(index, expense.id, formExpenseToPayload(expense, month, type));
+          }
         }
 
         if (onExpensesChange) {
@@ -262,6 +294,8 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
     handleExpenseChange,
     handleCategoryChange,
     handleAddRow,
-    handleDeleteRow
+    handleDeleteRow,
+    snackbarMessage,
+    clearSnackbar: () => setSnackbarMessage(null)
   };
 }

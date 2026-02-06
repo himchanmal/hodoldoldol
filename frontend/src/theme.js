@@ -93,6 +93,14 @@ const theme = createTheme({
           boxShadow: 'none'
         }
       }
+    },
+    MuiSnackbarContent: {
+      styleOverrides: {
+        root: {
+          backgroundColor: 'rgba(14, 116, 144, 0.8)',
+          color: '#f0fdfa'
+        }
+      }
     }
   }
 });

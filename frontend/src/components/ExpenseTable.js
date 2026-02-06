@@ -8,7 +8,8 @@ import {
   TableCell,
   TextField,
   Button,
-  IconButton
+  IconButton,
+  Snackbar
 } from '@mui/material';
 import {Add, Delete} from '@mui/icons-material';
 import CategoryDropdown from './CategoryDropdown.js';
@@ -29,7 +30,9 @@ const ExpenseTable = memo(function ExpenseTable({
     handleExpenseChange,
     handleCategoryChange,
     handleAddRow,
-    handleDeleteRow
+    handleDeleteRow,
+    snackbarMessage,
+    clearSnackbar
   } = useExpenseTable({
     expenses,
     onExpensesChange,
@@ -40,6 +43,7 @@ const ExpenseTable = memo(function ExpenseTable({
   });
 
   return (
+    <>
     <Box sx={{overflow: 'hidden'}}>
       <Box
         sx={{
@@ -185,6 +189,14 @@ const ExpenseTable = memo(function ExpenseTable({
         </Table>
       </Box>
     </Box>
+    <Snackbar
+      open={Boolean(snackbarMessage)}
+      autoHideDuration={3000}
+      onClose={clearSnackbar}
+      message={snackbarMessage}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+    />
+    </>
   );
 });
 
