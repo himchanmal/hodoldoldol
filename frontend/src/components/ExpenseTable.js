@@ -14,7 +14,7 @@ import {Add, Delete} from '@mui/icons-material';
 import CategoryDropdown from './CategoryDropdown.js';
 import {useAuth} from '../contexts/AuthContext.js';
 import {useExpenseTable} from '../hooks/useExpenseTable.js';
-import {formatAmount} from '../utils/expense.js';
+import {formatAmount, evaluateFormula} from '../utils/expense.js';
 
 const ExpenseTable = memo(function ExpenseTable({
   expenses = [],
@@ -23,6 +23,7 @@ const ExpenseTable = memo(function ExpenseTable({
   type
 }) {
   const {isAuthenticated, canWrite} = useAuth();
+  const [editingAmountIndex, setEditingAmountIndex] = React.useState(null);
   const {
     localExpenses,
     handleExpenseChange,
@@ -107,17 +108,40 @@ const ExpenseTable = memo(function ExpenseTable({
                 <TableCell sx={{textAlign: 'center', py: 1, minWidth: 120}}>
                   <TextField
                     type="text"
-                    value={formatAmount(expense.amount)}
+                    value={
+                      editingAmountIndex === index
+                        ? (typeof expense.amount === 'string' &&
+                          expense.amount.trim().startsWith('=')
+                            ? expense.amount
+                            : String(expense.amount ?? '').replace(/,/g, ''))
+                        : typeof expense.amount === 'string' &&
+                          expense.amount.trim().startsWith('=')
+                          ? (evaluateFormula(expense.amount) != null
+                            ? formatAmount(evaluateFormula(expense.amount))
+                            : expense.amount)
+                          : formatAmount(expense.amount)
+                    }
+                    onFocus={() => setEditingAmountIndex(index)}
+                    onBlur={() => setEditingAmountIndex(null)}
                     onChange={(e) => {
-                      const numericValue = e.target.value.replace(/,/g, '');
+                      const raw = e.target.value;
+                      const numericOnly = raw.replace(/,/g, '');
+                      const isFormula = raw.trim().startsWith('=');
+                      const formulaOk =
+                        isFormula && /^=[0-9+\-*/().\s]*$/.test(raw.trim());
                       if (
-                        numericValue === '' ||
-                        /^\d+$/.test(numericValue)
+                        raw === '' ||
+                        /^\d+$/.test(numericOnly) ||
+                        formulaOk
                       ) {
-                        handleExpenseChange(index, 'amount', numericValue);
+                        handleExpenseChange(
+                          index,
+                          'amount',
+                          isFormula ? raw : numericOnly
+                        );
                       }
                     }}
-                    placeholder="금액"
+                    placeholder="금액 또는 수식"
                     size="small"
                     fullWidth
                     disabled={!isAuthenticated}

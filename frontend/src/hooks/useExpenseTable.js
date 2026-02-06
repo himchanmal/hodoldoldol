@@ -1,6 +1,6 @@
 import {useState, useEffect, useCallback, useRef} from 'react';
 import {expenseAPI} from '../lib/api.js';
-import {formExpenseToPayload, getEmptyExpenseRow} from '../utils/expense.js';
+import {formExpenseToPayload, getEmptyExpenseRow, getNumericAmount} from '../utils/expense.js';
 import {showAuthError, AUTH_REQUIRED_MESSAGE, isAuthError} from '../utils/error.js';
 
 const DEBOUNCE_MS = 500;
@@ -89,7 +89,7 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
     (index, expense) => {
       if (
         !expense.date ||
-        !expense.amount ||
+        getNumericAmount(expense.amount) == null ||
         !expense.majorCategory ||
         !expense.minorCategory ||
         !month ||
@@ -135,9 +135,10 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
         const updated = [...prev];
         updated[index] = {...updated[index], [field]: value};
         const expense = updated[index];
+        const amountValid = getNumericAmount(expense.amount) != null;
         const isComplete =
           expense.date &&
-          expense.amount &&
+          amountValid &&
           expense.majorCategory &&
           expense.minorCategory;
         const isNoteField = field === 'note';
@@ -178,9 +179,10 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
           minorCategory: minor
         };
         const expense = updated[index];
+        const amountValid = getNumericAmount(expense.amount) != null;
         const isComplete =
           expense.date &&
-          expense.amount &&
+          amountValid &&
           expense.majorCategory &&
           expense.minorCategory;
 
