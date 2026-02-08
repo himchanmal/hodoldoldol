@@ -32,7 +32,8 @@ const ExpenseTable = memo(function ExpenseTable({
     handleAddRow,
     handleDeleteRow,
     snackbarMessage,
-    clearSnackbar
+    clearSnackbar,
+    isPending
   } = useExpenseTable({
     expenses,
     onExpensesChange,
@@ -59,7 +60,7 @@ const ExpenseTable = memo(function ExpenseTable({
           size="small"
           startIcon={<Add />}
           onClick={handleAddRow}
-          disabled={!canWrite}
+          disabled={!canWrite || isPending}
         >
           추가
         </Button>
@@ -106,7 +107,7 @@ const ExpenseTable = memo(function ExpenseTable({
                     size="small"
                     fullWidth
                     InputLabelProps={{shrink: true}}
-                    disabled={!isAuthenticated}
+                    disabled={!isAuthenticated || isPending}
                   />
                 </TableCell>
                 <TableCell sx={{textAlign: 'center', py: 1, minWidth: 120}}>
@@ -148,7 +149,7 @@ const ExpenseTable = memo(function ExpenseTable({
                     placeholder="금액 또는 수식"
                     size="small"
                     fullWidth
-                    disabled={!isAuthenticated}
+                    disabled={!isAuthenticated || isPending}
                   />
                 </TableCell>
                 <TableCell colSpan={2} sx={{textAlign: 'center', py: 1, px: 1}}>
@@ -158,7 +159,7 @@ const ExpenseTable = memo(function ExpenseTable({
                     onCategoryChange={(categories) =>
                       handleCategoryChange(index, categories)
                     }
-                    disabled={!isAuthenticated}
+                    disabled={!isAuthenticated || isPending}
                   />
                 </TableCell>
                 <TableCell sx={{textAlign: 'center', py: 1, minWidth: 150}}>
@@ -171,14 +172,14 @@ const ExpenseTable = memo(function ExpenseTable({
                     placeholder="메모"
                     size="small"
                     fullWidth
-                    disabled={!isAuthenticated}
+                    disabled={!isAuthenticated || isPending}
                   />
                 </TableCell>
                 <TableCell sx={{textAlign: 'center', py: 1, width: 50}}>
                   <IconButton
                     size="small"
                     onClick={() => handleDeleteRow(index)}
-                    disabled={!canWrite}
+                    disabled={!canWrite || isPending}
                   >
                     <Delete fontSize="small" />
                   </IconButton>

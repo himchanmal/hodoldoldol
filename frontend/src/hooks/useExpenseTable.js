@@ -16,6 +16,11 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
   const updateTimeoutsRef = useRef({});
   const pendingUpdatesRef = useRef({});
   const creatingIndicesRef = useRef(new Set());
+  const [isPending, setIsPending] = useState(false);
+
+  const updateIsPending = useCallback(() => {
+    setIsPending(creatingIndicesRef.current.size > 0);
+  }, []);
 
   const revertToPropsState = useCallback(() => {
     const fromProps = lastExpensesFromPropsRef.current;
@@ -56,6 +61,14 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
       updateTimeoutsRef.current = {};
       pendingUpdatesRef.current = {};
     };
+  }, []);
+
+  const clearPendingUpdate = useCallback((index) => {
+    if (updateTimeoutsRef.current[index] != null) {
+      clearTimeout(updateTimeoutsRef.current[index]);
+      delete updateTimeoutsRef.current[index];
+      delete pendingUpdatesRef.current[index];
+    }
   }, []);
 
   const scheduleDebouncedUpdate = useCallback((index, id, expenseData) => {
@@ -109,6 +122,7 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
       }
       if (creatingIndicesRef.current.has(index)) return;
       creatingIndicesRef.current.add(index);
+      updateIsPending();
 
       const expenseData = formExpenseToPayload(expense, month, type);
 
@@ -131,47 +145,61 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
           }
         } finally {
           creatingIndicesRef.current.delete(index);
+          updateIsPending();
         }
       })();
     },
-    [month, type, canWrite, onExpensesChange, revertToPropsState]
+    [month, type, canWrite, onExpensesChange, revertToPropsState, updateIsPending]
+  );
+
+  const processExpenseUpdate = useCallback(
+    (index, expense) => {
+      const amountValid = getNumericAmount(expense.amount) != null;
+      const isComplete =
+        expense.date &&
+        amountValid &&
+        expense.majorCategory &&
+        expense.minorCategory;
+
+      if (isComplete && !expense.id && month && type && isAuthenticated) {
+        tryCreateExpense(index, expense);
+      } else if (expense.id && month && type && isAuthenticated) {
+        const numAmount = getNumericAmount(expense.amount);
+        if (numAmount == null) {
+          clearPendingUpdate(index);
+        } else if (numAmount === 0) {
+          clearPendingUpdate(index);
+          setSnackbarMessage(AMOUNT_ZERO_MESSAGE);
+        } else {
+          scheduleDebouncedUpdate(index, expense.id, formExpenseToPayload(expense, month, type));
+        }
+      }
+    },
+    [
+      month,
+      type,
+      isAuthenticated,
+      tryCreateExpense,
+      scheduleDebouncedUpdate,
+      clearPendingUpdate
+    ]
   );
 
   const handleExpenseChange = useCallback(
     (index, field, value) => {
+      if (isPending) return;
       setLocalExpenses((prev) => {
         const updated = [...prev];
         updated[index] = {...updated[index], [field]: value};
         const expense = updated[index];
-        const amountValid = getNumericAmount(expense.amount) != null;
+        const isNoteField = field === 'note';
         const isComplete =
           expense.date &&
-          amountValid &&
+          getNumericAmount(expense.amount) != null &&
           expense.majorCategory &&
           expense.minorCategory;
-        const isNoteField = field === 'note';
 
-        if (isComplete && !expense.id && month && type && isAuthenticated) {
-          tryCreateExpense(index, expense);
-        } else if (expense.id && month && type && isAuthenticated) {
-          const numAmount = getNumericAmount(expense.amount);
-          if (numAmount == null) {
-            if (updateTimeoutsRef.current[index] != null) {
-              clearTimeout(updateTimeoutsRef.current[index]);
-              delete updateTimeoutsRef.current[index];
-              delete pendingUpdatesRef.current[index];
-            }
-          } else if (numAmount === 0) {
-            if (updateTimeoutsRef.current[index] != null) {
-              clearTimeout(updateTimeoutsRef.current[index]);
-              delete updateTimeoutsRef.current[index];
-              delete pendingUpdatesRef.current[index];
-            }
-            setSnackbarMessage(AMOUNT_ZERO_MESSAGE);
-          } else {
-            scheduleDebouncedUpdate(index, expense.id, formExpenseToPayload(expense, month, type));
-          }
-        }
+        processExpenseUpdate(index, expense);
 
         if (onExpensesChange && (!isNoteField || isComplete)) {
           onExpensesChange(updated);
@@ -179,18 +207,12 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
         return updated;
       });
     },
-    [
-      month,
-      type,
-      isAuthenticated,
-      onExpensesChange,
-      scheduleDebouncedUpdate,
-      tryCreateExpense
-    ]
+    [onExpensesChange, processExpenseUpdate, isPending]
   );
 
   const handleCategoryChange = useCallback(
     (index, {major, minor}) => {
+      if (isPending) return;
       setLocalExpenses((prev) => {
         const updated = [...prev];
         updated[index] = {
@@ -198,35 +220,7 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
           majorCategory: major,
           minorCategory: minor
         };
-        const expense = updated[index];
-        const amountValid = getNumericAmount(expense.amount) != null;
-        const isComplete =
-          expense.date &&
-          amountValid &&
-          expense.majorCategory &&
-          expense.minorCategory;
-
-        if (isComplete && !expense.id && month && type && isAuthenticated) {
-          tryCreateExpense(index, expense);
-        } else if (expense.id && month && type && isAuthenticated) {
-          const numAmount = getNumericAmount(expense.amount);
-          if (numAmount == null) {
-            if (updateTimeoutsRef.current[index] != null) {
-              clearTimeout(updateTimeoutsRef.current[index]);
-              delete updateTimeoutsRef.current[index];
-              delete pendingUpdatesRef.current[index];
-            }
-          } else if (numAmount === 0) {
-            if (updateTimeoutsRef.current[index] != null) {
-              clearTimeout(updateTimeoutsRef.current[index]);
-              delete updateTimeoutsRef.current[index];
-              delete pendingUpdatesRef.current[index];
-            }
-            setSnackbarMessage(AMOUNT_ZERO_MESSAGE);
-          } else {
-            scheduleDebouncedUpdate(index, expense.id, formExpenseToPayload(expense, month, type));
-          }
-        }
+        processExpenseUpdate(index, updated[index]);
 
         if (onExpensesChange) {
           onExpensesChange(updated);
@@ -234,14 +228,7 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
         return updated;
       });
     },
-    [
-      month,
-      type,
-      isAuthenticated,
-      onExpensesChange,
-      scheduleDebouncedUpdate,
-      tryCreateExpense
-    ]
+    [onExpensesChange, processExpenseUpdate, isPending]
   );
 
   const handleAddRow = useCallback(() => {
@@ -249,12 +236,13 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
       alert(AUTH_REQUIRED_MESSAGE);
       return;
     }
+    if (isPending) return;
     setLocalExpenses((prev) => {
       const updated = [getEmptyExpenseRow(), ...prev];
       onExpensesChange?.(updated);
       return updated;
     });
-  }, [onExpensesChange, canWrite]);
+  }, [onExpensesChange, canWrite, isPending]);
 
   const handleDeleteRow = useCallback(
     async (index) => {
@@ -262,6 +250,7 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
         alert(AUTH_REQUIRED_MESSAGE);
         return;
       }
+      if (isPending) return;
 
       const expense = localExpenses[index];
       if (expense?.id) {
@@ -279,14 +268,14 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
 
       setLocalExpenses((prev) => {
         const updated = prev.filter((_, i) => i !== index);
-      if (updated.length === 0) {
-        updated.push(getEmptyExpenseRow());
-      }
+        if (updated.length === 0) {
+          updated.push(getEmptyExpenseRow());
+        }
         onExpensesChange?.(updated);
         return updated;
       });
     },
-    [localExpenses, onExpensesChange, canWrite, revertToPropsState]
+    [localExpenses, onExpensesChange, canWrite, revertToPropsState, isPending]
   );
 
   return {
@@ -296,6 +285,7 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
     handleAddRow,
     handleDeleteRow,
     snackbarMessage,
-    clearSnackbar: () => setSnackbarMessage(null)
+    clearSnackbar: () => setSnackbarMessage(null),
+    isPending
   };
 }
