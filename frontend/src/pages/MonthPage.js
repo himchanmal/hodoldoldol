@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {Box, CircularProgress, Alert} from '@mui/material';
+import {Box, CircularProgress, Alert, Container} from '@mui/material';
 import ExpenseTable from '../components/ExpenseTable.js';
 import Tabs from '../components/Tabs.js';
 import {expenseAPI} from '../lib/api.js';
@@ -80,35 +80,33 @@ function MonthPage({month, expensesBoth, expensesHodol, expensesDoldol, onExpens
 
   return (
     <>
-      <Box sx={{mx: {xs: -2, sm: -3}, mt: -2}}>
-        <Tabs tabs={tabs} activeTab={activeTabId} onTabChange={handleTabChange} />
-      </Box>
-      <Box sx={{mt: 2}}>
-        {activeTab === 0 && (
-          <ExpenseTable
-            expenses={expensesBoth}
-            onExpensesChange={onExpensesBothChange}
-            month={month}
-            type="both"
-          />
-        )}
-        {activeTab === 1 && (
-          <ExpenseTable
-            expenses={expensesHodol}
-            onExpensesChange={onExpensesHodolChange}
-            month={month}
-            type="hodol"
-          />
-        )}
-        {activeTab === 2 && (
-          <ExpenseTable
-            expenses={expensesDoldol}
-            onExpensesChange={onExpensesDoldolChange}
-            month={month}
-            type="doldol"
-          />
-        )}
-      </Box>
+      <Tabs tabs={tabs} activeTab={activeTabId} onTabChange={handleTabChange} />
+      <Container maxWidth="xl" sx={{py: 1}}>
+      {activeTab === 0 && (
+        <ExpenseTable
+          expenses={expensesBoth}
+          onExpensesChange={onExpensesBothChange}
+          month={month}
+          type="both"
+        />
+      )}
+      {activeTab === 1 && (
+        <ExpenseTable
+          expenses={expensesHodol}
+          onExpensesChange={onExpensesHodolChange}
+          month={month}
+          type="hodol"
+        />
+      )}
+      {activeTab === 2 && (
+        <ExpenseTable
+          expenses={expensesDoldol}
+          onExpensesChange={onExpensesDoldolChange}
+          month={month}
+          type="doldol"
+        />
+      )}
+      </Container>
     </>
   );
 }

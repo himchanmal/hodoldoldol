@@ -90,9 +90,13 @@ function App() {
           <Header />
           <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
           <Box component="main" sx={{flexGrow: 1, overflowY: 'auto'}}>
-            <Container maxWidth="xl" sx={{py: 2}}>
-              {renderTabContent()}
-            </Container>
+            {activeTab === 'category' || activeTab === 'summary' ? (
+              <Container maxWidth="xl" sx={{py: 2}}>
+                {renderTabContent()}
+              </Container>
+            ) : (
+              renderTabContent()
+            )}
           </Box>
         </Box>
       </CategoryProvider>
