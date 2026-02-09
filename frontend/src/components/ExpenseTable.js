@@ -172,7 +172,7 @@ const ExpenseTable = memo(function ExpenseTable({
                     placeholder="메모"
                     size="small"
                     fullWidth
-                    disabled={!isAuthenticated || isPending}
+                    disabled={!isAuthenticated}
                   />
                 </TableCell>
                 <TableCell sx={{textAlign: 'center', py: 1, width: 50}}>

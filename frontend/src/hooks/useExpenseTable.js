@@ -132,8 +132,24 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
           if (result?.data) {
             setLocalExpenses((current) => {
               const next = [...current];
-              next[index] = {...expense, id: result.data.id};
+              const merged = {...current[index], id: result.data.id};
+              next[index] = merged;
               onExpensesChange?.(next);
+
+              const noteChanged = (current[index]?.note || '') !== (expense.note || '');
+              if (noteChanged && merged.note) {
+                expenseAPI.update(result.data.id, {
+                  month: expenseData.month,
+                  type: expenseData.type,
+                  date: expenseData.date,
+                  amount: expenseData.amount,
+                  major_category: expenseData.major_category,
+                  minor_category: expenseData.minor_category,
+                  note: merged.note || ''
+                }).catch((err) => {
+                  console.error('메모 반영 오류:', err);
+                });
+              }
               return next;
             });
           }
@@ -187,7 +203,7 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
 
   const handleExpenseChange = useCallback(
     (index, field, value) => {
-      if (isPending) return;
+      if (isPending && field !== 'note') return;
       setLocalExpenses((prev) => {
         const updated = [...prev];
         updated[index] = {...updated[index], [field]: value};
@@ -199,7 +215,9 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
           expense.majorCategory &&
           expense.minorCategory;
 
-        processExpenseUpdate(index, expense);
+        if (!isNoteField || !isPending) {
+          processExpenseUpdate(index, expense);
+        }
 
         if (onExpensesChange && (!isNoteField || isComplete)) {
           onExpensesChange(updated);
