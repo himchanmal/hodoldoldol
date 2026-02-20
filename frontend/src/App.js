@@ -1,4 +1,4 @@
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useRef, useEffect} from 'react';
 import {ThemeProvider, Box, Container, CssBaseline} from '@mui/material';
 import theme from './theme.js';
 import {CategoryProvider} from './contexts/CategoryContext.js';
@@ -8,6 +8,8 @@ import Header from './components/Header.js';
 import CategoryPage from './pages/CategoryPage.js';
 import SummaryPage from './pages/SummaryPage.js';
 import MonthPage from './pages/MonthPage.js';
+import {expenseAPI} from './lib/api.js';
+import {groupExpensesByType} from './utils/expense.js';
 
 function App() {
   // 현재 월을 가져와서 해당 월 탭을 기본으로 선택
@@ -18,6 +20,11 @@ function App() {
 
   const [activeTab, setActiveTab] = useState(getCurrentMonth());
   const [monthlyExpenses, setMonthlyExpenses] = useState({});
+  const [expensesRefreshTrigger, setExpensesRefreshTrigger] = useState(0);
+  const monthlyExpensesRef = useRef(monthlyExpenses);
+  useEffect(() => {
+    monthlyExpensesRef.current = monthlyExpenses;
+  }, [monthlyExpenses]);
 
   const tabs = [
     {id: 'summary', label: '총괄장'},
@@ -57,9 +64,35 @@ function App() {
     }));
   }, []);
 
+  const handleCategoryUpdated = useCallback(() => {
+    setExpensesRefreshTrigger((t) => t + 1);
+    // 캐시된 월들의 지출을 즉시 다시 불러와서 변경된 카테고리명 반영
+    const months = Object.keys(monthlyExpensesRef.current);
+    if (months.length === 0) return;
+    const refetch = async () => {
+      for (const m of months) {
+        try {
+          const monthNum = parseInt(m, 10);
+          const res = await expenseAPI.getAll(monthNum);
+          const grouped = groupExpensesByType(res?.data ?? []);
+          setMonthlyExpenses((prev) => ({
+            ...prev,
+            [m]: {
+              ...(prev[m] || {both: [], hodol: [], doldol: []}),
+              ...grouped
+            }
+          }));
+        } catch (err) {
+          console.error('지출 새로고침 오류:', err);
+        }
+      }
+    };
+    refetch();
+  }, []);
+
   const renderTabContent = () => {
     if (activeTab === 'category') {
-      return <CategoryPage />;
+      return <CategoryPage onCategoryUpdated={handleCategoryUpdated} />;
     }
 
     if (activeTab === 'summary') {
@@ -72,6 +105,7 @@ function App() {
     return (
       <MonthPage
         month={month}
+        expensesRefreshTrigger={expensesRefreshTrigger}
         expensesBoth={monthExpenses.both}
         expensesHodol={monthExpenses.hodol}
         expensesDoldol={monthExpenses.doldol}

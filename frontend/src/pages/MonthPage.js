@@ -3,14 +3,14 @@ import {Box, CircularProgress, Alert, Container} from '@mui/material';
 import ExpenseTable from '../components/ExpenseTable.js';
 import Tabs from '../components/Tabs.js';
 import {expenseAPI} from '../lib/api.js';
-import {apiExpenseToForm} from '../utils/expense.js';
+import {groupExpensesByType} from '../utils/expense.js';
 
-function MonthPage({month, expensesBoth, expensesHodol, expensesDoldol, onExpensesBothChange, onExpensesHodolChange, onExpensesDoldolChange}) {
+function MonthPage({month, expensesRefreshTrigger, expensesBoth, expensesHodol, expensesDoldol, onExpensesBothChange, onExpensesHodolChange, onExpensesDoldolChange}) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
 
-  // 데이터 로드(month가 변경될 때만)
+  // 데이터 로드(month 또는 카테고리 수정 후 새로고침 트리거 변경 시)
   useEffect(() => {
     if (!month) return;
     setLoading(true);
@@ -20,21 +20,10 @@ function MonthPage({month, expensesBoth, expensesHodol, expensesDoldol, onExpens
       try {
         const monthNum = parseInt(month);
         const res = await expenseAPI.getAll(monthNum);
-        const list = res?.data ?? [];
-
-        const byType = { both: [], hodol: [], doldol: [] };
-        list.forEach((e) => {
-          const t = (e.type || 'both').toLowerCase();
-          if (byType[t]) byType[t].push(e);
-        });
-
-        const bothData = (byType.both || []).map((expense) => apiExpenseToForm(expense)).filter(Boolean);
-        const hodolData = (byType.hodol || []).map((expense) => apiExpenseToForm(expense)).filter(Boolean);
-        const doldolData = (byType.doldol || []).map((expense) => apiExpenseToForm(expense)).filter(Boolean);
-
-        onExpensesBothChange(bothData);
-        onExpensesHodolChange(hodolData);
-        onExpensesDoldolChange(doldolData);
+        const {both, hodol, doldol} = groupExpensesByType(res?.data ?? []);
+        onExpensesBothChange(both);
+        onExpensesHodolChange(hodol);
+        onExpensesDoldolChange(doldol);
       } catch (err) {
         console.error('지출 내역 로드 오류:', err);
         setError(err.message || '지출 내역을 불러오는 중 오류가 발생했습니다.');
@@ -45,7 +34,7 @@ function MonthPage({month, expensesBoth, expensesHodol, expensesDoldol, onExpens
 
     loadExpenses();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [month]); // month만 dependency로 사용
+  }, [month, expensesRefreshTrigger]);
 
   if (loading) {
     return (

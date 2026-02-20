@@ -29,9 +29,17 @@ const CategoryDropdown = memo(function CategoryDropdown({onCategoryChange, selec
 
   const minorCategories = majorCategory ? (categories[majorCategory] || []) : [];
 
-  // MUI Select는 value가 반드시 옵션 목록에 있어야 함. 카테고리 로딩 전/삭제된 카테고리면 ''로 표시
-  const safeMajorValue = majorCategory && majorCategories.includes(majorCategory) ? majorCategory : '';
-  const safeMinorValue = minorCategory && minorCategories.includes(minorCategory) ? minorCategory : '';
+  // 선택된 값이 목록에 없어도 표시 (카테고리 수정 직후). 바뀐 이름을 포함한 전체 옵션이 보이도록 하고 중복만 제거
+  const majorOptions = majorCategory && !majorCategories.includes(majorCategory)
+    ? [majorCategory, ...majorCategories.filter((c) => c !== majorCategory)]
+    : majorCategories;
+  const minorOptions = minorCategory && !minorCategories.includes(minorCategory)
+    ? [minorCategory, ...minorCategories.filter((c) => c !== minorCategory)]
+    : minorCategories;
+
+  // MUI Select는 value가 반드시 옵션 목록에 있어야 함. 위에서 목록에 없으면 옵션에 추가해 둠
+  const safeMajorValue = majorCategory && majorOptions.includes(majorCategory) ? majorCategory : '';
+  const safeMinorValue = minorCategory && minorOptions.includes(minorCategory) ? minorCategory : '';
 
   return (
     <Box sx={{display: 'flex', gap: 1}}>
@@ -56,7 +64,7 @@ const CategoryDropdown = memo(function CategoryDropdown({onCategoryChange, selec
           <MenuItem value="" disabled>
             <em>대분류 선택</em>
           </MenuItem>
-          {majorCategories.map((category) => (
+          {majorOptions.map((category) => (
             <MenuItem key={category} value={category}>
               {category}
             </MenuItem>
@@ -81,7 +89,7 @@ const CategoryDropdown = memo(function CategoryDropdown({onCategoryChange, selec
           <MenuItem value="" disabled>
             <em>소분류 선택</em>
           </MenuItem>
-          {minorCategories.map((category) => (
+          {minorOptions.map((category) => (
             <MenuItem key={category} value={category}>
               {category}
             </MenuItem>

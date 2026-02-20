@@ -18,12 +18,12 @@ import {
   Alert
 } from '@mui/material';
 import {Add, Edit, Delete} from '@mui/icons-material';
-import {useCategories} from '../hooks/useCategories.js';
+import {useCategoryContext} from '../contexts/CategoryContext.js';
 import {useAuth} from '../contexts/AuthContext.js';
 import {AUTH_REQUIRED_MESSAGE, isAuthError} from '../utils/error.js';
 
-function CategoryPage() {
-  const {categories, majorCategories, loading, error, addCategory, deleteCategory, updateCategory} = useCategories();
+function CategoryPage({onCategoryUpdated}) {
+  const {categories, majorCategories, loading, error, addCategory, deleteCategory, updateCategory} = useCategoryContext();
   const {canWrite} = useAuth();
   const [openDialog, setOpenDialog] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
@@ -87,6 +87,7 @@ function CategoryPage() {
         : await addCategory(main, sub);
 
       if (result.success) {
+        if (editingCategory?.id) onCategoryUpdated?.();
         handleCloseDialog();
       } else {
         alert('오류가 발생했습니다: ' + result.error);
@@ -105,6 +106,7 @@ function CategoryPage() {
     if (window.confirm('정말 삭제하시겠습니까?')) {
       try {
         await deleteCategory(id);
+        onCategoryUpdated?.();
       } catch (error) {
         alert(isAuthError(error) ? error.message : '오류가 발생했습니다: ' + error.message);
       }

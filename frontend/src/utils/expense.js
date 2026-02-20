@@ -92,6 +92,21 @@ export function apiExpenseToForm(apiExpense) {
   };
 }
 
+/** API 지출 목록을 타입별(both/hodol/doldol) 폼 데이터로 그룹핑 */
+export function groupExpensesByType(apiList) {
+  const list = Array.isArray(apiList) ? apiList : [];
+  const byType = {both: [], hodol: [], doldol: []};
+  list.forEach((e) => {
+    const t = (e.type || 'both').toLowerCase();
+    if (byType[t]) byType[t].push(e);
+  });
+  return {
+    both: (byType.both || []).map(apiExpenseToForm).filter(Boolean),
+    hodol: (byType.hodol || []).map(apiExpenseToForm).filter(Boolean),
+    doldol: (byType.doldol || []).map(apiExpenseToForm).filter(Boolean)
+  };
+}
+
 export function formExpenseToPayload(expense, month, type) {
   const num = getNumericAmount(expense.amount);
   const amount = num != null && Number.isFinite(num) ? Math.round(Number(num)) : 0;
