@@ -14,10 +14,14 @@ import {
   DialogActions,
   TextField,
   IconButton,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
   CircularProgress,
   Alert
 } from '@mui/material';
-import {Add, Edit, Delete} from '@mui/icons-material';
+import {Add, MoreVert, Edit, Delete} from '@mui/icons-material';
 import {useCategoryContext} from '../contexts/CategoryContext.js';
 import {useAuth} from '../contexts/AuthContext.js';
 import {AUTH_REQUIRED_MESSAGE, isAuthError} from '../utils/error.js';
@@ -28,6 +32,8 @@ function CategoryPage({onCategoryUpdated}) {
   const [openDialog, setOpenDialog] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [formData, setFormData] = useState({mainCategory: '', subCategory: ''});
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [menuTarget, setMenuTarget] = useState(null);
 
   const handleOpenAdd = () => {
     setEditingCategory(null);
@@ -111,6 +117,27 @@ function CategoryPage({onCategoryUpdated}) {
         alert(isAuthError(error) ? error.message : '오류가 발생했습니다: ' + error.message);
       }
     }
+  };
+
+  const handleOpenMenu = (e, item) => {
+    e.stopPropagation();
+    setMenuAnchor(e.currentTarget);
+    setMenuTarget({id: item.id, major: item.major, sub: item.sub_category});
+  };
+
+  const handleCloseMenu = () => {
+    setMenuAnchor(null);
+    setMenuTarget(null);
+  };
+
+  const handleMenuEdit = () => {
+    if (menuTarget) handleOpenEdit(menuTarget.id, menuTarget.major, menuTarget.sub);
+    handleCloseMenu();
+  };
+
+  const handleMenuDelete = () => {
+    if (menuTarget) handleDelete(menuTarget.id);
+    handleCloseMenu();
   };
 
   // 카테고리 데이터 가나다 순으로 정렬
@@ -224,46 +251,29 @@ function CategoryPage({onCategoryUpdated}) {
                       key={item.id}
                       sx={{
                         textAlign: "center",
-                        position: "relative",
                         whiteSpace: "nowrap",
                         py: 1,
                         px: 0,
                       }}
                     >
                       <Box
-                        component="span"
-                        sx={{ pr: 6, display: "inline-block" }}
+                        sx={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 0.5,
+                        }}
                       >
-                        {item.sub_category}
+                        <span>{item.sub_category}</span>
+                        <IconButton
+                          size="small"
+                          sx={{ p: 0.25 }}
+                          onClick={(e) => handleOpenMenu(e, {...item, major})}
+                          disabled={!canWrite}
+                          aria-label="카테고리 메뉴"
+                        >
+                          <MoreVert fontSize="small" />
+                        </IconButton>
                       </Box>
-                      <IconButton
-                        size="small"
-                        sx={{
-                          position: "absolute",
-                          right: 4,
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                        }}
-                        onClick={() =>
-                          handleOpenEdit(item.id, major, item.sub_category)
-                        }
-                        disabled={!canWrite}
-                      >
-                        <Edit fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        sx={{
-                          position: "absolute",
-                          right: 28,
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                        }}
-                        onClick={() => handleDelete(item.id)}
-                        disabled={!canWrite}
-                      >
-                        <Delete fontSize="small" />
-                      </IconButton>
                     </TableCell>
                   ))}
                   {Array(emptyCellCount)
@@ -281,6 +291,27 @@ function CategoryPage({onCategoryUpdated}) {
         </Table>
       </Box>
 
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={handleCloseMenu}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        PaperProps={{ sx: { minWidth: 80 } }}
+      >
+        <MenuItem onClick={handleMenuEdit} dense>
+          <ListItemIcon sx={{ "& .MuiSvgIcon-root": { fontSize: 16 } }}>
+            <Edit />
+          </ListItemIcon>
+          <ListItemText primary="수정" primaryTypographyProps={{ fontSize: "14" }} />
+        </MenuItem>
+        <MenuItem onClick={handleMenuDelete} dense sx={{ color: "error.main" }}>
+          <ListItemIcon sx={{ color: "inherit", "& .MuiSvgIcon-root": { fontSize: 16 } }}>
+            <Delete />
+          </ListItemIcon>
+          <ListItemText primary="삭제" primaryTypographyProps={{ fontSize: "14" }} />
+        </MenuItem>
+      </Menu>
 
       <Dialog
         open={openDialog}
