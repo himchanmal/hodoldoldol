@@ -130,3 +130,16 @@ export function getEmptyExpenseRow() {
     note: ''
   };
 }
+
+/** 지출 목록을 날짜 내림차순 정렬 (날짜 없음은 맨 뒤). 추가/수정 후 올바른 위치에 보이도록 */
+export function sortExpensesByDate(expenses) {
+  if (!Array.isArray(expenses) || expenses.length <= 1) return expenses;
+  return [...expenses].sort((a, b) => {
+    const dA = a.date || '';
+    const dB = b.date || '';
+    if (!dA && !dB) return 0;
+    if (!dA) return 1;
+    if (!dB) return -1;
+    return dB.localeCompare(dA);
+  });
+}

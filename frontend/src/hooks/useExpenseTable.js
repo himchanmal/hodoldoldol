@@ -1,6 +1,6 @@
 import {useState, useEffect, useCallback, useRef} from 'react';
 import {expenseAPI} from '../lib/api.js';
-import {formExpenseToPayload, getEmptyExpenseRow, getNumericAmount} from '../utils/expense.js';
+import {formExpenseToPayload, getEmptyExpenseRow, getNumericAmount, sortExpensesByDate} from '../utils/expense.js';
 import {showAuthError, AUTH_REQUIRED_MESSAGE, isAuthError} from '../utils/error.js';
 
 const DEBOUNCE_MS = 500;
@@ -134,7 +134,8 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
               const next = [...current];
               const merged = {...current[index], id: result.data.id};
               next[index] = merged;
-              onExpensesChange?.(next);
+              const sorted = sortExpensesByDate(next);
+              onExpensesChange?.(sorted);
 
               const noteChanged = (current[index]?.note || '') !== (expense.note || '');
               if (noteChanged && merged.note) {
@@ -150,7 +151,7 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
                   console.error('메모 반영 오류:', err);
                 });
               }
-              return next;
+              return sorted;
             });
           }
         } catch (error) {
@@ -219,10 +220,11 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
           processExpenseUpdate(index, expense);
         }
 
+        const toApply = field === 'date' ? sortExpensesByDate(updated) : updated;
         if (onExpensesChange && (!isNoteField || isComplete)) {
-          onExpensesChange(updated);
+          onExpensesChange(toApply);
         }
-        return updated;
+        return toApply;
       });
     },
     [onExpensesChange, processExpenseUpdate, isPending]
