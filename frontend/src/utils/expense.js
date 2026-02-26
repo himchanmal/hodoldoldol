@@ -143,3 +143,20 @@ export function sortExpensesByDate(expenses) {
     return dB.localeCompare(dA);
   });
 }
+
+/** 지출 목록을 금액 기준 정렬. order: 'asc' | 'desc'. 반환: [{ expense, originalIndex }] */
+export function sortExpensesByAmountWithIndex(expenses, order) {
+  if (!Array.isArray(expenses)) return [];
+  const withIndex = expenses.map((expense, i) => ({
+    expense,
+    originalIndex: i
+  }));
+  const asc = order === 'asc';
+  withIndex.sort((a, b) => {
+    const numA = getNumericAmount(a.expense.amount) ?? -Infinity;
+    const numB = getNumericAmount(b.expense.amount) ?? -Infinity;
+    if (numA === numB) return 0;
+    return asc ? (numA - numB) : (numB - numA);
+  });
+  return withIndex;
+}

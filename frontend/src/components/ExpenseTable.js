@@ -1,4 +1,4 @@
-import React, {memo} from 'react';
+import React, {memo, useMemo, useState} from 'react';
 import {
   Box,
   Table,
@@ -11,11 +11,13 @@ import {
   IconButton,
   Snackbar
 } from '@mui/material';
-import {Add, Delete} from '@mui/icons-material';
+import {Add, Delete, Sort, ArrowDownward, ArrowUpward} from '@mui/icons-material';
 import CategoryDropdown from './CategoryDropdown.js';
 import {useAuth} from '../contexts/AuthContext.js';
 import {useExpenseTable} from '../hooks/useExpenseTable.js';
-import {formatAmount, evaluateFormula} from '../utils/expense.js';
+import {formatAmount, evaluateFormula, sortExpensesByAmountWithIndex} from '../utils/expense.js';
+
+const SORT_CYCLE = ['date', 'amount_desc', 'amount_asc'];
 
 const ExpenseTable = memo(function ExpenseTable({
   expenses = [],
@@ -24,7 +26,8 @@ const ExpenseTable = memo(function ExpenseTable({
   type
 }) {
   const {isAuthenticated, canWrite} = useAuth();
-  const [editingAmountIndex, setEditingAmountIndex] = React.useState(null);
+  const [editingAmountIndex, setEditingAmountIndex] = useState(null);
+  const [sortBy, setSortBy] = useState('date');
   const {
     localExpenses,
     handleExpenseChange,
@@ -42,6 +45,23 @@ const ExpenseTable = memo(function ExpenseTable({
     isAuthenticated,
     canWrite
   });
+
+  const displayedRows = useMemo(() => {
+    if (sortBy === 'date') {
+      return localExpenses.map((expense, i) => ({ expense, originalIndex: i }));
+    }
+    return sortExpensesByAmountWithIndex(
+      localExpenses,
+      sortBy === 'amount_asc' ? 'asc' : 'desc'
+    );
+  }, [localExpenses, sortBy]);
+
+  const cycleSortBy = () => {
+    const idx = SORT_CYCLE.indexOf(sortBy);
+    setSortBy(SORT_CYCLE[(idx + 1) % SORT_CYCLE.length]);
+  };
+
+  const SortIcon = sortBy === 'amount_desc' ? ArrowDownward : sortBy === 'amount_asc' ? ArrowUpward : Sort;
 
   return (
     <>
@@ -73,7 +93,30 @@ const ExpenseTable = memo(function ExpenseTable({
               <TableCell
                 sx={{fontWeight: 600, textAlign: 'center', minWidth: 120}}
               >
-                금액
+                <Box
+                  component="span"
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.5
+                  }}
+                >
+                  금액
+                  <IconButton
+                    size="small"
+                    onClick={cycleSortBy}
+                    sx={{ p: 0.25 }}
+                    aria-label={
+                      sortBy === 'date'
+                        ? '날짜순 (클릭 시 금액 내림차순)'
+                        : sortBy === 'amount_desc'
+                        ? '금액 내림차순 (클릭 시 오름차순)'
+                        : '금액 오름차순 (클릭 시 날짜순)'
+                    }
+                  >
+                    <SortIcon sx={{ fontSize: 18 }} />
+                  </IconButton>
+                </Box>
               </TableCell>
               <TableCell
                 colSpan={2}
@@ -92,9 +135,9 @@ const ExpenseTable = memo(function ExpenseTable({
             </TableRow>
           </TableHead>
           <TableBody>
-            {localExpenses.map((expense, index) => (
+            {displayedRows.map(({ expense, originalIndex }) => (
               <TableRow
-                key={expense.id || `expense-${index}`}
+                key={expense.id || `expense-${originalIndex}`}
                 sx={{'&:hover': {bgcolor: 'grey.50'}}}
               >
                 <TableCell sx={{textAlign: 'center', py: 1}}>
@@ -102,7 +145,7 @@ const ExpenseTable = memo(function ExpenseTable({
                     type="date"
                     value={expense.date}
                     onChange={(e) =>
-                      handleExpenseChange(index, 'date', e.target.value)
+                      handleExpenseChange(originalIndex, 'date', e.target.value)
                     }
                     size="small"
                     fullWidth
@@ -114,7 +157,7 @@ const ExpenseTable = memo(function ExpenseTable({
                   <TextField
                     type="text"
                     value={
-                      editingAmountIndex === index
+                      editingAmountIndex === originalIndex
                         ? (typeof expense.amount === 'string' &&
                           expense.amount.trim().startsWith('=')
                             ? expense.amount
@@ -126,7 +169,7 @@ const ExpenseTable = memo(function ExpenseTable({
                             : expense.amount)
                           : formatAmount(expense.amount)
                     }
-                    onFocus={() => setEditingAmountIndex(index)}
+                    onFocus={() => setEditingAmountIndex(originalIndex)}
                     onBlur={() => setEditingAmountIndex(null)}
                     onChange={(e) => {
                       const raw = e.target.value;
@@ -140,7 +183,7 @@ const ExpenseTable = memo(function ExpenseTable({
                         formulaOk
                       ) {
                         handleExpenseChange(
-                          index,
+                          originalIndex,
                           'amount',
                           isFormula ? raw : numericOnly
                         );
@@ -157,7 +200,7 @@ const ExpenseTable = memo(function ExpenseTable({
                     selectedMajor={expense.majorCategory}
                     selectedMinor={expense.minorCategory}
                     onCategoryChange={(categories) =>
-                      handleCategoryChange(index, categories)
+                      handleCategoryChange(originalIndex, categories)
                     }
                     disabled={!isAuthenticated || isPending}
                   />
@@ -167,7 +210,7 @@ const ExpenseTable = memo(function ExpenseTable({
                     type="text"
                     value={expense.note}
                     onChange={(e) =>
-                      handleExpenseChange(index, 'note', e.target.value)
+                      handleExpenseChange(originalIndex, 'note', e.target.value)
                     }
                     placeholder="메모"
                     size="small"
@@ -178,7 +221,7 @@ const ExpenseTable = memo(function ExpenseTable({
                 <TableCell sx={{textAlign: 'center', py: 1, width: 50}}>
                   <IconButton
                     size="small"
-                    onClick={() => handleDeleteRow(index)}
+                    onClick={() => handleDeleteRow(originalIndex)}
                     disabled={!canWrite || isPending}
                   >
                     <Delete fontSize="small" />
