@@ -102,7 +102,7 @@ router.put('/:id', async (req, res) => {
     }
 
     const {id} = req.params;
-    const {date, amount, major_category, minor_category, note} = req.body;
+    const {date, amount, major_category, minor_category, note, type} = req.body;
 
     const updateData = {};
     if (date !== undefined) updateData.date = date;
@@ -110,6 +110,7 @@ router.put('/:id', async (req, res) => {
     if (major_category !== undefined) updateData.major_category = major_category;
     if (minor_category !== undefined) updateData.minor_category = minor_category;
     if (note !== undefined) updateData.note = note;
+    if (type !== undefined && ['both', 'hodol', 'doldol'].includes(type)) updateData.type = type;
 
     const {data, error} = await supabase
       .from('expenses')

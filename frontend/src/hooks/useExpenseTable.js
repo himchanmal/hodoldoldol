@@ -1,13 +1,16 @@
-import {useState, useEffect, useCallback, useRef} from 'react';
+import {useState, useEffect, useCallback, useRef, useMemo} from 'react';
 import {expenseAPI} from '../lib/api.js';
-import {formExpenseToPayload, getEmptyExpenseRow, getNumericAmount, sortExpensesByDate} from '../utils/expense.js';
+import {formExpenseToPayload, getEmptyExpenseRow, getNumericAmount, sortExpensesByDate, sortExpensesByAmountWithIndex} from '../utils/expense.js';
 import {showAuthError, AUTH_REQUIRED_MESSAGE, isAuthError} from '../utils/error.js';
+import {MOVE_TARGETS} from '../constants/expenseTypes.js';
 
 const DEBOUNCE_MS = 500;
 
 const AMOUNT_ZERO_MESSAGE = '금액은 0보다 커야 합니다.';
 
-export function useExpenseTable({expenses = [], onExpensesChange, month, type, isAuthenticated, canWrite = false}) {
+const SORT_CYCLE = ['date', 'amount_desc', 'amount_asc'];
+
+export function useExpenseTable({expenses = [], onExpensesChange, month, type, isAuthenticated, canWrite = false, onMoveToType}) {
   const [localExpenses, setLocalExpenses] = useState([]);
   const [snackbarMessage, setSnackbarMessage] = useState(null);
   const prevExpensesRef = useRef(null);
@@ -17,6 +20,9 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
   const pendingUpdatesRef = useRef({});
   const creatingIndicesRef = useRef(new Set());
   const [isPending, setIsPending] = useState(false);
+  const [sortBy, setSortBy] = useState('date');
+  const [moveAnchor, setMoveAnchor] = useState(null);
+  const [moveExpense, setMoveExpense] = useState(null);
 
   const updateIsPending = useCallback(() => {
     setIsPending(creatingIndicesRef.current.size > 0);
@@ -298,8 +304,65 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
     [localExpenses, onExpensesChange, canWrite, revertToPropsState, isPending]
   );
 
+  const displayedRows = useMemo(() => {
+    if (sortBy === 'date') {
+      return localExpenses.map((expense, i) => ({ expense, originalIndex: i }));
+    }
+    return sortExpensesByAmountWithIndex(
+      localExpenses,
+      sortBy === 'amount_asc' ? 'asc' : 'desc'
+    );
+  }, [localExpenses, sortBy]);
+
+  const cycleSortBy = useCallback(() => {
+    setSortBy((prev) => {
+      const idx = SORT_CYCLE.indexOf(prev);
+      return SORT_CYCLE[(idx + 1) % SORT_CYCLE.length];
+    });
+  }, []);
+
+  const moveTargets = MOVE_TARGETS[type] || [];
+
+  const handleOpenMoveMenu = useCallback((e, expense) => {
+    e.stopPropagation();
+    setMoveAnchor(e.currentTarget);
+    setMoveExpense(expense);
+  }, []);
+
+  const handleCloseMoveMenu = useCallback(() => {
+    setMoveAnchor(null);
+    setMoveExpense(null);
+  }, []);
+
+  const handleMoveTo = useCallback(
+    async (targetType) => {
+      if (!moveExpense?.id || !onMoveToType) {
+        handleCloseMoveMenu();
+        return;
+      }
+      try {
+        const payload = formExpenseToPayload(moveExpense, month, targetType);
+        await expenseAPI.update(moveExpense.id, payload);
+        onMoveToType(moveExpense, targetType);
+      } catch (err) {
+        console.error('지출 이동 오류:', err);
+      }
+      handleCloseMoveMenu();
+    },
+    [moveExpense, month, onMoveToType, handleCloseMoveMenu]
+  );
+
   return {
     localExpenses,
+    displayedRows,
+    sortBy,
+    cycleSortBy,
+    moveAnchor,
+    moveExpense,
+    moveTargets,
+    handleOpenMoveMenu,
+    handleCloseMoveMenu,
+    handleMoveTo,
     handleExpenseChange,
     handleCategoryChange,
     handleAddRow,

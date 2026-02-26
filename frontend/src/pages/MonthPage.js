@@ -3,7 +3,8 @@ import {Box, CircularProgress, Alert, Container} from '@mui/material';
 import ExpenseTable from '../components/ExpenseTable.js';
 import Tabs from '../components/Tabs.js';
 import {expenseAPI} from '../lib/api.js';
-import {groupExpensesByType} from '../utils/expense.js';
+import {groupExpensesByType, sortExpensesByDate} from '../utils/expense.js';
+import {EXPENSE_TYPE_TABS} from '../constants/expenseTypes.js';
 
 function MonthPage({month, expensesRefreshTrigger, expensesBoth, expensesHodol, expensesDoldol, onExpensesBothChange, onExpensesHodolChange, onExpensesDoldolChange}) {
   const [loading, setLoading] = useState(true);
@@ -54,17 +55,25 @@ function MonthPage({month, expensesRefreshTrigger, expensesBoth, expensesHodol, 
     );
   }
 
-  const tabs = [
-    {id: 'both', label: '호돌이와 돌돌이'},
-    {id: 'hodol', label: '호돌이'},
-    {id: 'doldol', label: '돌돌이'}
-  ];
-
+  const tabs = EXPENSE_TYPE_TABS;
   const activeTabId = tabs[activeTab]?.id || 'both';
 
   const handleTabChange = (tabId) => {
-    const index = tabs.findIndex(tab => tab.id === tabId);
+    const index = tabs.findIndex((tab) => tab.id === tabId);
     setActiveTab(index >= 0 ? index : 0);
+  };
+
+  const handleMoveToType = (expense, targetType) => {
+    const newBoth = expensesBoth.filter((e) => e.id !== expense.id);
+    const newHodol = expensesHodol.filter((e) => e.id !== expense.id);
+    const newDoldol = expensesDoldol.filter((e) => e.id !== expense.id);
+    if (targetType === 'both') newBoth.push(expense);
+    else if (targetType === 'hodol') newHodol.push(expense);
+    else newDoldol.push(expense);
+
+    onExpensesBothChange(targetType === 'both' ? sortExpensesByDate(newBoth) : newBoth);
+    onExpensesHodolChange(targetType === 'hodol' ? sortExpensesByDate(newHodol) : newHodol);
+    onExpensesDoldolChange(targetType === 'doldol' ? sortExpensesByDate(newDoldol) : newDoldol);
   };
 
   return (
@@ -77,6 +86,7 @@ function MonthPage({month, expensesRefreshTrigger, expensesBoth, expensesHodol, 
           onExpensesChange={onExpensesBothChange}
           month={month}
           type="both"
+          onMoveToType={handleMoveToType}
         />
       )}
       {activeTab === 1 && (
@@ -85,6 +95,7 @@ function MonthPage({month, expensesRefreshTrigger, expensesBoth, expensesHodol, 
           onExpensesChange={onExpensesHodolChange}
           month={month}
           type="hodol"
+          onMoveToType={handleMoveToType}
         />
       )}
       {activeTab === 2 && (
@@ -93,6 +104,7 @@ function MonthPage({month, expensesRefreshTrigger, expensesBoth, expensesHodol, 
           onExpensesChange={onExpensesDoldolChange}
           month={month}
           type="doldol"
+          onMoveToType={handleMoveToType}
         />
       )}
       </Container>

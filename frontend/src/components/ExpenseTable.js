@@ -1,4 +1,4 @@
-import React, {memo, useMemo, useState} from 'react';
+import React, {memo, useState} from 'react';
 import {
   Box,
   Table,
@@ -9,27 +9,34 @@ import {
   TextField,
   Button,
   IconButton,
-  Snackbar
+  Snackbar,
+  Menu,
+  MenuItem
 } from '@mui/material';
-import {Add, Delete, Sort, ArrowDownward, ArrowUpward} from '@mui/icons-material';
+import {Add, Delete, Sort, ArrowDownward, ArrowUpward, SwapHoriz} from '@mui/icons-material';
 import CategoryDropdown from './CategoryDropdown.js';
 import {useAuth} from '../contexts/AuthContext.js';
 import {useExpenseTable} from '../hooks/useExpenseTable.js';
-import {formatAmount, evaluateFormula, sortExpensesByAmountWithIndex} from '../utils/expense.js';
-
-const SORT_CYCLE = ['date', 'amount_desc', 'amount_asc'];
+import {formatAmount, evaluateFormula} from '../utils/expense.js';
 
 const ExpenseTable = memo(function ExpenseTable({
   expenses = [],
   onExpensesChange,
   month,
-  type
+  type,
+  onMoveToType
 }) {
   const {isAuthenticated, canWrite} = useAuth();
   const [editingAmountIndex, setEditingAmountIndex] = useState(null);
-  const [sortBy, setSortBy] = useState('date');
   const {
-    localExpenses,
+    displayedRows,
+    sortBy,
+    cycleSortBy,
+    moveAnchor,
+    moveTargets,
+    handleOpenMoveMenu,
+    handleCloseMoveMenu,
+    handleMoveTo,
     handleExpenseChange,
     handleCategoryChange,
     handleAddRow,
@@ -43,23 +50,9 @@ const ExpenseTable = memo(function ExpenseTable({
     month,
     type,
     isAuthenticated,
-    canWrite
+    canWrite,
+    onMoveToType
   });
-
-  const displayedRows = useMemo(() => {
-    if (sortBy === 'date') {
-      return localExpenses.map((expense, i) => ({ expense, originalIndex: i }));
-    }
-    return sortExpensesByAmountWithIndex(
-      localExpenses,
-      sortBy === 'amount_asc' ? 'asc' : 'desc'
-    );
-  }, [localExpenses, sortBy]);
-
-  const cycleSortBy = () => {
-    const idx = SORT_CYCLE.indexOf(sortBy);
-    setSortBy(SORT_CYCLE[(idx + 1) % SORT_CYCLE.length]);
-  };
 
   const SortIcon = sortBy === 'amount_desc' ? ArrowDownward : sortBy === 'amount_asc' ? ArrowUpward : Sort;
 
@@ -130,7 +123,7 @@ const ExpenseTable = memo(function ExpenseTable({
                 메모
               </TableCell>
               <TableCell
-                sx={{fontWeight: 600, textAlign: 'center', width: 50}}
+                sx={{fontWeight: 600, textAlign: 'center', width: 90}}
               />
             </TableRow>
           </TableHead>
@@ -218,14 +211,26 @@ const ExpenseTable = memo(function ExpenseTable({
                     disabled={!isAuthenticated}
                   />
                 </TableCell>
-                <TableCell sx={{textAlign: 'center', py: 1, width: 50}}>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleDeleteRow(originalIndex)}
-                    disabled={!canWrite || isPending}
-                  >
-                    <Delete fontSize="small" />
-                  </IconButton>
+                <TableCell sx={{textAlign: 'center', py: 1, width: 90}}>
+                  <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
+                    {expense.id && canWrite && moveTargets.length > 0 && (
+                      <IconButton
+                        size="small"
+                        onClick={(e) => handleOpenMoveMenu(e, expense)}
+                        disabled={isPending}
+                        aria-label="다른 탭으로 이동"
+                      >
+                        <SwapHoriz fontSize="small" />
+                      </IconButton>
+                    )}
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDeleteRow(originalIndex)}
+                      disabled={!canWrite || isPending}
+                    >
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  </Box>
                 </TableCell>
               </TableRow>
             ))}
@@ -233,6 +238,29 @@ const ExpenseTable = memo(function ExpenseTable({
         </Table>
       </Box>
     </Box>
+    <Menu
+      anchorEl={moveAnchor}
+      open={Boolean(moveAnchor)}
+      onClose={handleCloseMoveMenu}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      PaperProps={{
+        sx: {
+          minWidth: 60,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        },
+      }}
+    >
+      {moveTargets.map((t) => (
+        <MenuItem
+          key={t.id}
+          onClick={() => handleMoveTo(t.id)}
+          sx={{ fontSize: '14px'}}
+        >
+          {t.label}
+        </MenuItem>
+      ))}
+    </Menu>
     <Snackbar
       open={Boolean(snackbarMessage)}
       autoHideDuration={3000}
