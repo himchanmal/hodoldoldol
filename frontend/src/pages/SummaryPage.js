@@ -25,7 +25,8 @@ import {
   sumTypeRow
 } from '../utils/summary.js';
 
-const TYPES_WITH_SUM = [...TYPES, { key: 'sum', label: '합계' }];
+const SUMMARY_HEAD_COLS = [...TYPES, {key: 'sum', label: '합계'}, {key: 'avg', label: '월별 평균'}];
+const SUMMARY_HEAD_COLS_MONTHLY = SUMMARY_HEAD_COLS.filter((c) => c.key !== 'avg');
 
 function SummaryPage() {
   const theme = useTheme();
@@ -109,15 +110,27 @@ function SummaryPage() {
       }
     : {...stickyCategoryStyle, borderLeft: 1, borderColor: 'divider'};
 
+  const monthCountForAvg = usedMonths.length;
+  const categoryAvg = (catSum) =>
+    monthCountForAvg > 0 ? Math.round(catSum / monthCountForAvg) : null;
+
   const tableWidth = Math.max(
     800,
-    100 + usedMonths.length * (3 * SUMMARY_CELL_MIN_WIDTH + SUMMARY_SUM_CELL_MIN_WIDTH) + (3 * SUMMARY_CELL_MIN_WIDTH + SUMMARY_SUM_CELL_MIN_WIDTH)
+    100 +
+      usedMonths.length * (3 * SUMMARY_CELL_MIN_WIDTH + SUMMARY_SUM_CELL_MIN_WIDTH) +
+      (4 * SUMMARY_CELL_MIN_WIDTH + SUMMARY_SUM_CELL_MIN_WIDTH)
   );
   const grandSum = sumTypeRow(grandTotals);
 
   const stickyRightOffsets = isStickyCategory
-    ? [SUMMARY_SUM_CELL_MIN_WIDTH + SUMMARY_CELL_MIN_WIDTH * 2, SUMMARY_SUM_CELL_MIN_WIDTH + SUMMARY_CELL_MIN_WIDTH, SUMMARY_SUM_CELL_MIN_WIDTH, 0]
-    : [null, null, null, null];
+    ? [
+        SUMMARY_SUM_CELL_MIN_WIDTH + SUMMARY_CELL_MIN_WIDTH * 3,
+        SUMMARY_SUM_CELL_MIN_WIDTH + SUMMARY_CELL_MIN_WIDTH * 2,
+        SUMMARY_SUM_CELL_MIN_WIDTH + SUMMARY_CELL_MIN_WIDTH,
+        SUMMARY_CELL_MIN_WIDTH,
+        0
+      ]
+    : [null, null, null, null, null];
 
   const getStickyBases = (bgcolor, zIndex) => {
     const baseRight = {
@@ -163,6 +176,7 @@ function SummaryPage() {
           <col style={{width: SUMMARY_CELL_MIN_WIDTH}} />
           <col style={{width: SUMMARY_CELL_MIN_WIDTH}} />
           <col style={{width: SUMMARY_SUM_CELL_MIN_WIDTH}} />
+          <col style={{width: SUMMARY_CELL_MIN_WIDTH}} />
         </colgroup>
         <TableHead>
           <TableRow sx={summaryHeaderRowSx}>
@@ -185,7 +199,7 @@ function SummaryPage() {
               </TableCell>
             ))}
             <TableCell
-              colSpan={4}
+              colSpan={5}
               sx={{
                 fontWeight: 600,
                 textAlign: 'center',
@@ -207,7 +221,7 @@ function SummaryPage() {
           <TableRow sx={{bgcolor: 'grey.50'}}>
             <TableCell sx={{position: 'sticky', left: 0, bgcolor: 'grey.50', zIndex: 1}} />
             {usedMonths.map((month, monthIdx) =>
-              TYPES_WITH_SUM.map(({key, label}, typeIdx) => (
+              SUMMARY_HEAD_COLS_MONTHLY.map(({key, label}, typeIdx) => (
                 <TableCell
                   key={`${month}-${key}`}
                   sx={{
@@ -223,7 +237,7 @@ function SummaryPage() {
                 </TableCell>
               ))
             )}
-            {TYPES_WITH_SUM.map(({key, label}, i) => (
+            {SUMMARY_HEAD_COLS.map(({key, label}, i) => (
               <TableCell
                 key={`cat-${key}`}
                 sx={{
@@ -234,7 +248,7 @@ function SummaryPage() {
                   whiteSpace: key === 'both' ? 'pre-line' : undefined,
                   minWidth: i === 3 ? SUMMARY_SUM_CELL_MIN_WIDTH : SUMMARY_CELL_MIN_WIDTH,
                   ...(isStickyCategory && {
-                    right: i === 3 ? 0 : SUMMARY_SUM_CELL_MIN_WIDTH + (2 - i) * SUMMARY_CELL_MIN_WIDTH
+                    right: stickyRightOffsets[i] ?? 0
                   })
                 }}
               >
@@ -268,6 +282,7 @@ function SummaryPage() {
               {(() => {
                 const ct = categoryTotals[major] || {both: 0, hodol: 0, doldol: 0};
                 const catSum = sumTypeRow(ct);
+                const avg = categoryAvg(catSum);
                 const { stickyRight, stickyRightFirst } = stickyCategoryBases;
                 return (
                   <>
@@ -276,6 +291,18 @@ function SummaryPage() {
                     <TableCell sx={{...stickyRight, ...summaryStickyDataCellSx({textAlign: 'right', fontWeight: 500, ...(stickyRightOffsets[2] != null && {right: stickyRightOffsets[2]})})}} onClick={() => Number(ct.doldol) !== 0 && setDetailContext({major, month: null, type: 'doldol'})}>{formatAmount(ct.doldol)}</TableCell>
                     <TableCell sx={{...stickyRight, minWidth: SUMMARY_SUM_CELL_MIN_WIDTH, width: SUMMARY_SUM_CELL_MIN_WIDTH, ...summaryStickyDataCellSx({textAlign: 'right', fontWeight: 600, ...(stickyRightOffsets[3] != null && {right: stickyRightOffsets[3]})})}} onClick={() => Number(catSum) !== 0 && setDetailContext({major, month: null, type: 'sum'})}>
                       {renderAmountWithPct(catSum, grandSum)}
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        ...stickyRight,
+                        minWidth: SUMMARY_CELL_MIN_WIDTH,
+                        width: SUMMARY_CELL_MIN_WIDTH,
+                        textAlign: 'right',
+                        fontWeight: 500,
+                        ...(stickyRightOffsets[4] != null && {right: stickyRightOffsets[4]})
+                      }}
+                    >
+                      {avg != null ? formatAmount(avg) : '–'}
                     </TableCell>
                   </>
                 );
@@ -301,6 +328,7 @@ function SummaryPage() {
             })}
             {(() => {
               const g = grandTotals;
+              const grandAvg = categoryAvg(grandSum);
               const { stickyRight, stickyRightFirst } = stickyTotalBases;
               return (
                 <>
@@ -308,6 +336,19 @@ function SummaryPage() {
                   <TableCell sx={{...stickyRight, textAlign: 'right', fontWeight: 700, ...(stickyRightOffsets[1] != null && {right: stickyRightOffsets[1]})}}>{formatAmount(g.hodol)}</TableCell>
                   <TableCell sx={{...stickyRight, textAlign: 'right', fontWeight: 700, ...(stickyRightOffsets[2] != null && {right: stickyRightOffsets[2]})}}>{formatAmount(g.doldol)}</TableCell>
                   <TableCell sx={{...stickyRight, textAlign: 'right', fontWeight: 700, minWidth: SUMMARY_SUM_CELL_MIN_WIDTH, width: SUMMARY_SUM_CELL_MIN_WIDTH, ...(stickyRightOffsets[3] != null && {right: stickyRightOffsets[3]})}}>{formatAmount(grandSum)}</TableCell>
+                  <TableCell
+                    sx={{
+                      ...stickyRight,
+                      textAlign: 'right',
+                      fontWeight: 700,
+                      minWidth: SUMMARY_CELL_MIN_WIDTH,
+                      width: SUMMARY_CELL_MIN_WIDTH,
+                      color: 'text.secondary',
+                      ...(stickyRightOffsets[4] != null && {right: stickyRightOffsets[4]})
+                    }}
+                  >
+                    {grandAvg != null ? formatAmount(grandAvg) : '–'}
+                  </TableCell>
                 </>
               );
             })()}
