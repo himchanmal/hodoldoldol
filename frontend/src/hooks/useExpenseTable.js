@@ -1,7 +1,7 @@
 import {useState, useEffect, useCallback, useRef, useMemo} from 'react';
 import {expenseAPI} from '../lib/api.js';
 import {formExpenseToPayload, getEmptyExpenseRow, getNumericAmount, sortExpensesByDate, sortExpensesByAmountWithIndex} from '../utils/expense.js';
-import {showAuthError, AUTH_REQUIRED_MESSAGE, isAuthError} from '../utils/error.js';
+import {showAuthError, AUTH_REQUIRED_MESSAGE, isAuthError, NETWORK_UNCERTAIN_MESSAGE} from '../utils/error.js';
 import {MOVE_TARGETS} from '../constants/expenseTypes.js';
 
 const DEBOUNCE_MS = 500;
@@ -9,6 +9,19 @@ const DEBOUNCE_MS = 500;
 const AMOUNT_ZERO_MESSAGE = '금액은 0보다 커야 합니다.';
 
 const SORT_CYCLE = ['date', 'amount_desc', 'amount_asc'];
+
+function pendingToUpdateBody(payload) {
+  if (!payload?.id) return null;
+  return {
+    month: payload.month,
+    type: payload.type,
+    date: payload.date,
+    amount: payload.amount,
+    major_category: payload.major_category,
+    minor_category: payload.minor_category,
+    note: payload.note || ''
+  };
+}
 
 export function useExpenseTable({expenses = [], onExpensesChange, month, type, isAuthenticated, canWrite = false, onMoveToType}) {
   const [localExpenses, setLocalExpenses] = useState([]);
@@ -61,13 +74,34 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
     }
   }, [expenses]);
 
+  const flushPendingDebouncedUpdates = useCallback(() => {
+    const pending = pendingUpdatesRef.current;
+    const keys = Object.keys(pending);
+    for (const key of keys) {
+      const payload = pending[key];
+      const body = pendingToUpdateBody(payload);
+      if (updateTimeoutsRef.current[key] != null) {
+        clearTimeout(updateTimeoutsRef.current[key]);
+        delete updateTimeoutsRef.current[key];
+      }
+      delete pendingUpdatesRef.current[key];
+      if (body && payload?.id) {
+        expenseAPI.putKeepalive(payload.id, body);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     return () => {
-      Object.values(updateTimeoutsRef.current).forEach((id) => clearTimeout(id));
-      updateTimeoutsRef.current = {};
-      pendingUpdatesRef.current = {};
+      flushPendingDebouncedUpdates();
     };
-  }, []);
+  }, [flushPendingDebouncedUpdates]);
+
+  useEffect(() => {
+    const onPageHide = () => flushPendingDebouncedUpdates();
+    window.addEventListener('pagehide', onPageHide);
+    return () => window.removeEventListener('pagehide', onPageHide);
+  }, [flushPendingDebouncedUpdates]);
 
   const clearPendingUpdate = useCallback((index) => {
     if (updateTimeoutsRef.current[index] != null) {
@@ -99,7 +133,7 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
         });
       } catch (error) {
         console.error('지출 내역 수정 오류:', error);
-        showAuthError(error, '지출 내역 수정 중 오류가 발생했습니다.');
+        showAuthError(error, '지출 내역 수정 중 오류가 발생했습니다.', NETWORK_UNCERTAIN_MESSAGE);
         if (isAuthError(error)) {
           revertToPropsState();
         }
@@ -162,7 +196,7 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
           }
         } catch (error) {
           console.error('지출 내역 저장 오류:', error);
-          showAuthError(error, '지출 내역 저장 중 오류가 발생했습니다.');
+          showAuthError(error, '지출 내역 저장 중 오류가 발생했습니다.', NETWORK_UNCERTAIN_MESSAGE);
           if (isAuthError(error)) {
             revertToPropsState();
           }
@@ -284,7 +318,7 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
           await expenseAPI.delete(expense.id);
         } catch (error) {
           console.error('지출 내역 삭제 오류:', error);
-          showAuthError(error, '지출 내역 삭제 중 오류가 발생했습니다.');
+          showAuthError(error, '지출 내역 삭제 중 오류가 발생했습니다.', NETWORK_UNCERTAIN_MESSAGE);
           if (isAuthError(error)) {
             revertToPropsState();
           }
@@ -346,6 +380,7 @@ export function useExpenseTable({expenses = [], onExpensesChange, month, type, i
         onMoveToType(moveExpense, targetType);
       } catch (err) {
         console.error('지출 이동 오류:', err);
+        showAuthError(err, '지출 이동 중 오류가 발생했습니다.', NETWORK_UNCERTAIN_MESSAGE);
       }
       handleCloseMoveMenu();
     },

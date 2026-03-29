@@ -62,6 +62,25 @@ async function apiCall(endpoint, options = {}) {
   }
 }
 
+// 탭 종료·이탈 직전 등: 본문이 작을 때만 keepalive 사용 권장
+export function putExpenseKeepalive(id, expenseBody) {
+  const url = `${API_BASE_URL}/expenses/${id}`;
+  const token = getToken();
+  try {
+    fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && isTokenSafeForHeader(token) && {Authorization: `Bearer ${token}`})
+      },
+      body: JSON.stringify(expenseBody),
+      keepalive: true
+    }).catch(() => {});
+  } catch (error) {
+    console.error('지출 내역 저장 오류:', error);
+  }
+}
+
 // 카테고리 API
 export const categoryAPI = {
   // 모든 카테고리 조회
@@ -124,5 +143,7 @@ export const expenseAPI = {
   delete: (id) =>
     apiCall(`/expenses/${id}`, {
       method: 'DELETE'
-    })
+    }),
+
+  putKeepalive: putExpenseKeepalive
 };
