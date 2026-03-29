@@ -25,8 +25,51 @@ import {
   sumTypeRow
 } from '../utils/summary.js';
 
-const SUMMARY_HEAD_COLS = [...TYPES, {key: 'sum', label: '합계'}, {key: 'avg', label: '월별 평균'}];
+const SUMMARY_HEAD_COLS = [...TYPES, {key: 'sum', label: '합계'}, {key: 'avg', label: '평균'}];
 const SUMMARY_HEAD_COLS_MONTHLY = SUMMARY_HEAD_COLS.filter((c) => c.key !== 'avg');
+
+/** 같은 해 기준 직전 달 (1월은 비교 없음) */
+function prevCalendarMonth(monthNum) {
+  return monthNum > 1 ? monthNum - 1 : null;
+}
+
+function MoMComparedToPrevMonth({currentSum, prevMonth, prevSum}) {
+  if (prevMonth == null) return null;
+  const delta = currentSum - prevSum;
+  if (prevSum === 0 && currentSum === 0) return null;
+
+  let pctSuffix = '';
+  if (prevSum !== 0) {
+    const rawPct = (delta / prevSum) * 100;
+    const mag = Math.abs(rawPct).toFixed(1);
+    if (delta > 0) pctSuffix = ` (▲${mag}%)`;
+    else if (delta < 0) pctSuffix = ` (▼${mag}%)`;
+    else pctSuffix = ' (0.0%)';
+  } else if (currentSum > 0) {
+    pctSuffix = ' (전월 0)';
+  }
+
+  const sign = delta > 0 ? '+' : '';
+  const color =
+    delta > 0 ? 'error.main' : delta < 0 ? 'primary.main' : 'text.secondary';
+  const line = `${sign}${formatAmount(delta)}${pctSuffix}`;
+
+  return (
+    <Box
+      component="span"
+      sx={{
+        display: 'block',
+        mt: 0.35,
+        fontSize: '0.6875rem',
+        lineHeight: 1.25,
+        color,
+        whiteSpace: 'nowrap'
+      }}
+    >
+      {line}
+    </Box>
+  );
+}
 
 function SummaryPage() {
   const theme = useTheme();
@@ -157,14 +200,14 @@ function SummaryPage() {
   const renderAmountWithPct = (amount, total, sx = {}) => {
     const pct = total && total > 0 ? ((amount / total) * 100).toFixed(1) : null;
     return (
-      <>
+      <Box component="span" sx={{display: 'inline-block', whiteSpace: 'nowrap'}}>
         {formatAmount(amount)}
         {pct != null && (
-          <Box component="span" sx={{ ml: 0.5, fontSize: '0.75rem', color: 'text.secondary', ...sx }}>
+          <Box component="span" sx={{ml: 0.5, fontSize: '0.75rem', color: 'text.secondary', ...sx}}>
             ({pct}%)
           </Box>
         )}
-      </>
+      </Box>
     );
   };
 
@@ -273,14 +316,29 @@ function SummaryPage() {
                 const row = sumsByCategoryAndMonth[major]?.[month] || {both: 0, hodol: 0, doldol: 0};
                 const sum = sumTypeRow(row);
                 const monthTotal = sumTypeRow(totalsByMonth[month]);
+                const prevM = prevCalendarMonth(month);
+                const prevRowSum =
+                  prevM != null ? sumTypeRow(sumsByCategoryAndMonth[major]?.[prevM] || {}) : 0;
                 const borderRight = monthIdx < usedMonths.length - 1 ? {borderRight: 1, borderColor: 'divider'} : {};
                 return (
                   <React.Fragment key={month}>
                     <TableCell sx={summaryDataCellSx({textAlign: 'right', minWidth: SUMMARY_CELL_MIN_WIDTH})} onClick={() => Number(row.both) !== 0 && setDetailContext({major, month, type: 'both'})}>{formatAmount(row.both)}</TableCell>
                     <TableCell sx={summaryDataCellSx({textAlign: 'right', minWidth: SUMMARY_CELL_MIN_WIDTH})} onClick={() => Number(row.hodol) !== 0 && setDetailContext({major, month, type: 'hodol'})}>{formatAmount(row.hodol)}</TableCell>
                     <TableCell sx={summaryDataCellSx({textAlign: 'right', minWidth: SUMMARY_CELL_MIN_WIDTH})} onClick={() => Number(row.doldol) !== 0 && setDetailContext({major, month, type: 'doldol'})}>{formatAmount(row.doldol)}</TableCell>
-                    <TableCell sx={summaryDataCellSx({textAlign: 'right', fontWeight: 500, minWidth: SUMMARY_SUM_CELL_MIN_WIDTH, ...borderRight})} onClick={() => Number(sum) !== 0 && setDetailContext({major, month, type: 'sum'})}>
-                      {renderAmountWithPct(sum, monthTotal)}
+                    <TableCell
+                      sx={summaryDataCellSx({
+                        textAlign: 'right',
+                        fontWeight: 500,
+                        minWidth: SUMMARY_SUM_CELL_MIN_WIDTH,
+                        verticalAlign: 'top',
+                        ...borderRight
+                      })}
+                      onClick={() => Number(sum) !== 0 && setDetailContext({major, month, type: 'sum'})}
+                    >
+                      <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'flex-end'}}>
+                        {renderAmountWithPct(sum, monthTotal)}
+                        <MoMComparedToPrevMonth currentSum={sum} prevMonth={prevM} prevSum={prevRowSum} />
+                      </Box>
                     </TableCell>
                   </React.Fragment>
                 );
@@ -322,13 +380,33 @@ function SummaryPage() {
             {usedMonths.map((month, monthIdx) => {
               const t = totalsByMonth[month] || {both: 0, hodol: 0, doldol: 0};
               const totalSum = sumTypeRow(t);
+              const prevM = prevCalendarMonth(month);
+              const prevTotalSum =
+                prevM != null ? sumTypeRow(totalsByMonth[prevM] || {}) : 0;
               const borderRight = monthIdx < usedMonths.length - 1 ? {borderRight: 1, borderColor: 'divider'} : {};
               return (
                 <React.Fragment key={month}>
                   <TableCell sx={{textAlign: 'right', fontWeight: 600, minWidth: SUMMARY_CELL_MIN_WIDTH}}>{formatAmount(t.both)}</TableCell>
                   <TableCell sx={{textAlign: 'right', fontWeight: 600, minWidth: SUMMARY_CELL_MIN_WIDTH}}>{formatAmount(t.hodol)}</TableCell>
                   <TableCell sx={{textAlign: 'right', fontWeight: 600, minWidth: SUMMARY_CELL_MIN_WIDTH}}>{formatAmount(t.doldol)}</TableCell>
-                  <TableCell sx={{textAlign: 'right', fontWeight: 700, minWidth: SUMMARY_SUM_CELL_MIN_WIDTH, ...borderRight}}>{formatAmount(totalSum)}</TableCell>
+                  <TableCell
+                    sx={{
+                      textAlign: 'right',
+                      fontWeight: 700,
+                      minWidth: SUMMARY_SUM_CELL_MIN_WIDTH,
+                      verticalAlign: 'top',
+                      ...borderRight
+                    }}
+                  >
+                    <Box sx={{display: 'flex', flexDirection: 'column', alignItems: 'flex-end'}}>
+                      {formatAmount(totalSum)}
+                      <MoMComparedToPrevMonth
+                        currentSum={totalSum}
+                        prevMonth={prevM}
+                        prevSum={prevTotalSum}
+                      />
+                    </Box>
+                  </TableCell>
                 </React.Fragment>
               );
             })}
