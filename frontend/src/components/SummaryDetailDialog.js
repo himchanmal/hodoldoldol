@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   Box,
   Table,
@@ -22,9 +22,24 @@ import {
   summaryDialogAmountCellSxNarrow,
   summaryDialogHeaderCellSx
 } from '../utils/summary.js';
+import SummaryMinorExpensesDialog from './SummaryMinorExpensesDialog.js';
 
 function SummaryDetailDialog({open, onClose, detailContext, minorBreakdown, formatAmount: formatAmountProp}) {
   const format = formatAmountProp || formatAmount;
+  const [expensePopup, setExpensePopup] = useState(null);
+
+  const closeExpensePopup = () => setExpensePopup(null);
+
+  useEffect(() => {
+    if (!open) setExpensePopup(null);
+  }, [open]);
+
+  const detailKey =
+    detailContext &&
+    `${detailContext.major}-${detailContext.month}-${detailContext.type}`;
+  useEffect(() => {
+    setExpensePopup(null);
+  }, [detailKey]);
 
   if (!detailContext) return null;
 
@@ -43,8 +58,15 @@ function SummaryDetailDialog({open, onClose, detailContext, minorBreakdown, form
       )
     : null;
 
+  const showMonthCol = detailContext.month === null;
+
+  const handleMainClose = () => {
+    closeExpensePopup();
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+    <Dialog open={open} onClose={handleMainClose} maxWidth="xs">
       <DialogTitle
         sx={{
           display: 'flex',
@@ -56,7 +78,7 @@ function SummaryDetailDialog({open, onClose, detailContext, minorBreakdown, form
         }}
       >
         <span>{title}</span>
-        <IconButton size="small" onClick={onClose} aria-label="닫기">
+        <IconButton size="small" onClick={handleMainClose} aria-label="닫기">
           <CloseIcon />
         </IconButton>
       </DialogTitle>
@@ -81,15 +103,23 @@ function SummaryDetailDialog({open, onClose, detailContext, minorBreakdown, form
                 </TableRow>
               </TableHead>
               <TableBody>
-                {rows.map(({minor, both, hodol, doldol, sum}) => (
-                  <TableRow key={minor}>
-                    <TableCell sx={{minWidth: 100}}>{minor}</TableCell>
-                    <TableCell sx={summaryDialogAmountCellSxWide}>{format(both)}</TableCell>
-                    <TableCell sx={summaryDialogAmountCellSx}>{format(hodol)}</TableCell>
-                    <TableCell sx={summaryDialogAmountCellSx}>{format(doldol)}</TableCell>
-                    <TableCell sx={{...summaryDialogAmountCellSx, fontWeight: 500}}>{format(sum)}</TableCell>
-                  </TableRow>
-                ))}
+                {rows.map(({minor, both, hodol, doldol, sum, items}) => {
+                  const clickable = (items?.length ?? 0) > 0;
+                  return (
+                    <TableRow
+                      key={minor}
+                      hover={clickable}
+                      sx={clickable ? {cursor: 'pointer'} : undefined}
+                      onClick={() => clickable && setExpensePopup({minor, items})}
+                    >
+                      <TableCell sx={{minWidth: 100}}>{minor}</TableCell>
+                      <TableCell sx={summaryDialogAmountCellSxWide}>{format(both)}</TableCell>
+                      <TableCell sx={summaryDialogAmountCellSx}>{format(hodol)}</TableCell>
+                      <TableCell sx={summaryDialogAmountCellSx}>{format(doldol)}</TableCell>
+                      <TableCell sx={{...summaryDialogAmountCellSx, fontWeight: 500}}>{format(sum)}</TableCell>
+                    </TableRow>
+                  );
+                })}
                 {totalRow && (
                   <TableRow sx={summaryTotalRowSx}>
                     <TableCell sx={{fontWeight: 700, minWidth: 100}}>소분류 합계</TableCell>
@@ -114,12 +144,20 @@ function SummaryDetailDialog({open, onClose, detailContext, minorBreakdown, form
                 </TableRow>
               </TableHead>
               <TableBody>
-                {rows.map((row) => (
-                  <TableRow key={row.minor}>
-                    <TableCell sx={{minWidth: 140}}>{row.minor}</TableCell>
-                    <TableCell sx={{...summaryDialogAmountCellSxNarrow, fontWeight: 500}}>{format(row[detailContext.type] ?? 0)}</TableCell>
-                  </TableRow>
-                ))}
+                {rows.map((row) => {
+                  const clickable = (row.items?.length ?? 0) > 0;
+                  return (
+                    <TableRow
+                      key={row.minor}
+                      hover={clickable}
+                      sx={clickable ? {cursor: 'pointer'} : undefined}
+                      onClick={() => clickable && setExpensePopup({minor: row.minor, items: row.items})}
+                    >
+                      <TableCell sx={{minWidth: 140}}>{row.minor}</TableCell>
+                      <TableCell sx={{...summaryDialogAmountCellSxNarrow, fontWeight: 500}}>{format(row[detailContext.type] ?? 0)}</TableCell>
+                    </TableRow>
+                  );
+                })}
                 {totalRow && (
                   <TableRow sx={summaryTotalRowSx}>
                     <TableCell sx={{fontWeight: 700, minWidth: 140}}>소분류 합계</TableCell>
@@ -131,6 +169,16 @@ function SummaryDetailDialog({open, onClose, detailContext, minorBreakdown, form
           )}
         </Box>
       </DialogContent>
+
+      <SummaryMinorExpensesDialog
+        open={Boolean(expensePopup)}
+        onClose={closeExpensePopup}
+        majorCategory={detailContext.major}
+        minorCategory={expensePopup?.minor ?? ''}
+        items={expensePopup?.items ?? []}
+        showMonthCol={showMonthCol}
+        formatAmount={format}
+      />
     </Dialog>
   );
 }

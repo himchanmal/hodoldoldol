@@ -48,6 +48,7 @@ function SummaryPage() {
     if (!detailContext) return {rows: [], type: 'sum'};
     const {major, month, type} = detailContext;
     const byMinor = {};
+    const itemsByMinor = {};
     const monthsToUse = month !== null ? [month] : usedMonths;
     const typesToUse = type === 'sum' ? TYPES.map((t) => t.key) : [type];
 
@@ -58,8 +59,12 @@ function SummaryPage() {
           const maj = e.major_category || e.majorCategory;
           const minor = e.minor_category || e.minorCategory || '(미분류)';
           if (maj !== major) return;
-          if (!byMinor[minor]) byMinor[minor] = {both: 0, hodol: 0, doldol: 0};
+          if (!byMinor[minor]) {
+            byMinor[minor] = {both: 0, hodol: 0, doldol: 0};
+            itemsByMinor[minor] = [];
+          }
           byMinor[minor][key] += Number(e.amount) || 0;
+          itemsByMinor[minor].push(e);
         });
       });
     });
@@ -68,7 +73,8 @@ function SummaryPage() {
       .map(([minor, amounts]) => ({
         minor,
         ...amounts,
-        sum: (amounts.both || 0) + (amounts.hodol || 0) + (amounts.doldol || 0)
+        sum: (amounts.both || 0) + (amounts.hodol || 0) + (amounts.doldol || 0),
+        items: itemsByMinor[minor] || []
       }))
       .sort((a, b) => b.sum - a.sum);
     return {rows, type};
