@@ -109,7 +109,7 @@ export const categoryAPI = {
 
 // 지출 내역 API
 export const expenseAPI = {
-  // 지출 내역 조회 (month, type 생략 시 전체 조회 - 총괄장용)
+  // 지출 내역 조회 (month, type 생략 시 전체 조회)
   getAll: (month, type) => {
     const params = new URLSearchParams();
     if (month) params.append('month', month);
@@ -117,6 +117,10 @@ export const expenseAPI = {
     const qs = params.toString();
     return apiCall(qs ? `/expenses?${qs}` : '/expenses');
   },
+
+  // 지출 내역 페이지 조회 (총괄장용)
+  getPage: (page, limit = 500) =>
+    apiCall(`/expenses?page=${page}&limit=${limit}`),
 
   // 지출 내역 추가
   create: (expense) =>

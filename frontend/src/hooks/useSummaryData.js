@@ -18,8 +18,16 @@ export function useSummaryData() {
       setLoading(true);
       setError(null);
       try {
-        const res = await expenseAPI.getAll();
-        const list = res?.data ?? [];
+        const list = [];
+        let page = 1;
+        let hasMore = true;
+
+        while (hasMore) {
+          const res = await expenseAPI.getPage(page);
+          list.push(...(res?.data ?? []));
+          hasMore = res?.pagination?.hasMore === true;
+          page += 1;
+        }
         const byMonth = {};
         MONTHS.forEach((m) => {
           byMonth[m] = {both: [], hodol: [], doldol: []};

@@ -3,10 +3,10 @@ import {supabase} from '../lib/supabase.js';
 
 const router = express.Router();
 
-// 지출 내역 조회(월별, 타입별)
+// 지출 내역 조회(월별, 타입별, 페이지네이션)
 router.get('/', async (req, res) => {
   try {
-    const {month, type} = req.query;
+    const {month, type, page, limit} = req.query;
 
     let query = supabase
       .from('expenses')
@@ -22,16 +22,34 @@ router.get('/', async (req, res) => {
 
     query = query
       .order('date', {ascending: false})
-      .order('created_at', {ascending: false});
+      .order('created_at', {ascending: false})
+      .order('id', {ascending: false});
+
+    // page가 전달된 경우에만 범위를 적용해 기존 월별 조회 응답은 유지한다.
+    const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+    const pageSize = Math.min(Math.max(parseInt(limit, 10) || 500, 1), 1000);
+    if (page !== undefined) {
+      const from = (pageNum - 1) * pageSize;
+      query = query.range(from, from + pageSize - 1);
+    }
 
     const {data, error} = await query;
 
     if (error) throw error;
 
-    res.json({
+    const response = {
       success: true,
       data
-    });
+    };
+    if (page !== undefined) {
+      response.pagination = {
+        page: pageNum,
+        limit: pageSize,
+        hasMore: data.length === pageSize
+      };
+    }
+
+    res.json(response);
   } catch (error) {
     console.error('지출 내역 조회 오류:', error);
     res.status(500).json({
